@@ -1,0 +1,16 @@
+base_url = "https://paquari.com"
+title = "Matthias Görgens"
+description = "Notes on OCaml, Rust, property-based testing, and making compilers do the reviewing."
+default_language = "en"
+generate_feeds = true
+feed_filenames = ["atom.xml"]
+build_search_index = false
+
+[markdown]
+highlight_code = true
+highlight_theme = "inspired-github"
+smart_punctuation = true
+
+[extra]
+author = "Matthias Görgens"
+github = "https://github.com/matthiasgoergens"
