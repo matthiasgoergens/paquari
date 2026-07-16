@@ -5,7 +5,7 @@ description = "For years I threw LSTMs, unsupervised diff-recovery, and a 17 GB 
 draft = false
 +++
 
-There is an old ITA Software hiring puzzle from around 2004: you intercept two
+There is an old [ITA Software hiring puzzle](https://web.archive.org/web/20070303124822/http://www.itasoftware.com/careers/puzzle_archive.html?catid=39) from around 2004: you intercept two
 messages, both encrypted with a one-time pad over a 46-character alphabet
 (space, `A–Z`, `0–9`, and ten punctuation marks). Encryption is character-wise
 addition modulo 46. A one-time pad is the one cipher that is provably
