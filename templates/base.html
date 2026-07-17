@@ -111,15 +111,12 @@
     <nav>
       <a href="{{ get_url(path="@/posts/_index.md") }}">posts</a>
       <a href="{{ config.extra.github }}">github</a>
+      <a href="{{ config.extra.linkedin }}">linkedin</a>
       <a href="{{ get_url(path="atom.xml") }}">feed</a>
     </nav>
   </header>
   <main>
     {% block content %}{% endblock content %}
   </main>
-  <footer class="site">
-    <hr>
-    © {{ now() | date(format="%Y") }} {{ config.extra.author }}
-  </footer>
 </body>
 </html>
