@@ -1,15 +1,14 @@
 +++
 title = "The two-time pad wanted a 5-gram, not a neural net"
-date = 2026-07-16
+date = 2026-07-16T23:28:00+08:00
 description = "For years I threw LSTMs, unsupervised diff-recovery, and a 17 GB corpus at a reused one-time pad. What actually broke it was a character 5-gram and a beam search that refuses to commit early — and I should have tried that on day one."
-draft = false
 +++
 
 *The original puzzle, preserved on the Internet Archive: [Decrypting the Two-Time Pad](https://web.archive.org/web/20070303124822/http://www.itasoftware.com/careers/puzzle_archive.html?catid=39).*
 
 There is an old ITA Software hiring puzzle from around 2004: you intercept two
 messages, both encrypted with a one-time pad over a 46-character alphabet
-(space, `A–Z`, `0–9`, and ten punctuation marks). Encryption is character-wise
+(space, `A–Z`, `0–9`, and nine punctuation marks). Encryption is character-wise
 addition modulo 46. A one-time pad is the one cipher that is provably
 unbreakable — given a single ciphertext, every plaintext of the right length is
 exactly as likely as any other, and no amount of computation helps. The catch,

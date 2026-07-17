@@ -1,6 +1,6 @@
 +++
 title = "A solution in search of a problem"
-date = 2026-07-16
+date = 2026-07-16T23:29:00+08:00
 description = "Mozak's zkVM let mutually-distrusting programs coordinate without seeing each other's code. I spent months failing to explain why anyone would want that — because most of the field never enters the regime where the problem exists."
 +++
 
@@ -153,9 +153,11 @@ relationships are known at authoring time — precisely when you do not
 have this problem. Monolithic proving (zkEVMs, Cairo) assumes one
 trusted executor and public contracts. The nearest cousin is Aleo,
 which also proves calls as separate transitions bound into a
-transaction — and whose documentation states plainly that private
-applications cannot compose. That wall is exactly where the script
-begins.
+transaction — and where, as [Equilibrium's deep
+dive](https://equilibrium.co/writing/privacy-blockchains-and-aleo-deep-dive)
+puts it plainly, "there is no composability between private
+applications": one application cannot take another's private state as
+input. That wall is exactly where the script begins.
 
 ## Where this is going
 

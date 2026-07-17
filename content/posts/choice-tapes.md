@@ -1,6 +1,6 @@
 +++
 title = "Your generators already know how to shrink"
-date = 2026-07-16
+date = 2026-07-16T21:48:00+08:00
 description = "A Conjecture-style choice-tape shrink engine for base_quickcheck, built on a seam OCaml gets almost for free."
 +++
 
@@ -140,9 +140,10 @@ building a coverage-guided fuzzer on top of these generators, too.
 
 The engine builds and runs under OxCaml (the 5.2.0+ox overlay, Base
 and ppxlib at v0.18 preview) with a handful of compatibility shims in
-my vendored copies, none in the engine. Same benchmark, both
-compilers: byte-identical results, down to the same 10129 total shrink
-attempts across 200 runs. For a testing tool, determinism across
+my vendored copies, none in the engine. A determinism check — 200
+find-and-shrink cycles of the bind-heavy property above — gives
+byte-identical results on both compilers, down to the same 10129
+total shrink attempts. For a testing tool, determinism across
 compiler forks is a feature worth stating.
 
 Shrink attempts are also embarrassingly parallel: independent replays

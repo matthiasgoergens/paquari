@@ -1,8 +1,7 @@
 +++
 title = "A proof that 0 = 1, in a real zk-VM"
-date = 2026-07-16
+date = 2026-07-16T23:27:00+08:00
 description = "Two syntax-tree nodes in Polygon Miden hashed to the same value, a gap the team had already flagged in a TODO. I turned it into a running proof that a program outputting 0 outputs 1 instead."
-draft = false
 +++
 
 A zero-knowledge VM makes one promise to a verifier: *I ran the program
@@ -41,13 +40,14 @@ to, and that gap is the whole exploit.
 ## Programs are trees, and the tree is the identity
 
 Miden does not hash the text of your assembly. It compiles the program
-to a Merkelised abstract syntax tree (a MAST), and the program's
+to a Merkleised abstract syntax tree (a MAST), and the program's
 identity is the hash of the tree's root. Two node types matter here:
 
 - `SPLIT(a, b)` is a conditional. It reads the top of the stack; if it
   is one, it runs `a`, and if it is zero, it runs `b`. The `if.true`
   above compiles to a `SPLIT` whose true branch is `push.1` and whose
-  false branch is empty. On the default stack of zeros, `SPLIT` takes
+  false branch is an empty (noop) span. On the default stack of
+  zeros, `SPLIT` takes
   the false branch and does nothing. Output: zeros.
 - `JOIN(a, b)` is a sequence. It runs `a`, then runs `b`,
   unconditionally.
@@ -124,9 +124,9 @@ Edward Kmett showed up with the cleanest of the arithmetic ones. Rather
 than widening the hash to take an extra "which node type" input (there
 were no free slots), apply a different affine transformation to one of
 the hash inputs per node type: hash `3a + 1, b` for one kind and
-`5a + 2, b` for another. Distinct linear adjustments send otherwise
--equal inputs to unrelated outputs, so all tree shapes hash apart, at a
-cost of one multiply and one add per node against the full price of a
+`5a + 2, b` for another. Distinct linear adjustments send otherwise-equal inputs to unrelated
+outputs, so all tree shapes hash apart, at a cost of one multiply and
+one add per node against the full price of a
 cryptographic permutation. He preferred an affine map over a bare
 multiply precisely because one of the real hash inputs was zero, and a
 constant times zero is still zero. He even put a fix over the fence as
@@ -140,7 +140,7 @@ spare. Using different output slots as the digest costs no field
 operations but complicates the constraint system.
 
 Here is the part I did not see coming. Miden was already migrating to a
-new hash function, RPO (Rescue Prime Optimised), and that migration
+new hash function, RPO (Rescue-Prime Optimized), and that migration
 changed the arithmetic of the decision. RPO's wider state left a
 capacity register genuinely free, so the objection to domain
 separation, the one thing that had made it look expensive, simply

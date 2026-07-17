@@ -1,6 +1,6 @@
 +++
 title = "The mode checker reviewed my code"
-date = 2026-07-16
+date = 2026-07-16T21:49:00+08:00
 description = "OxCaml's mode system found the one global that made my shrink engine unsafe to parallelise, explained itself, and the forced refactor paid for itself the same afternoon."
 +++
 
@@ -117,9 +117,10 @@ domains= 8  wall 2.01s
 domains=16  wall 1.92s
 ```
 
-4.6x at 16 domains, saturating because shrinking's bisection passes
-are still sequential (Amdahl, as always). And the same binary-except-
-compiler under OxCaml:
+4.6x at 8 domains, creeping to 4.8x at 16, saturating because
+shrinking's bisection passes are still sequential (Amdahl, as
+always). And the same
+binary-except-compiler under OxCaml:
 
 ```
 domains= 1  wall 8.03s
