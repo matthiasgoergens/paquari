@@ -1,6 +1,6 @@
 +++
 title = "What the borrow checker won't review"
-date = 2026-07-16
+date = 2026-07-16T23:59:00+08:00
 description = "Two bcachefs bugs that cost me a week each. The borrow checker would have caught neither: one is an allocation in the wrong context, the other a loop that never ends, but a proof assistant catches the second. Different reviewers for different bugs."
 +++
 
