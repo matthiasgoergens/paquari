@@ -39,7 +39,11 @@ thirty, sixty, sometimes more seconds, then back as if nothing had
 happened. If you've run a tiered bcachefs setup you may have felt this
 as an occasional "why did the terminal just stop" during a big file copy
 or delete. I later found other people describing exactly that in the
-wild, which was reassuring in the way that only "it's not just me" can be.
+wild (upstream issues
+[#934](https://github.com/koverstreet/bcachefs/issues/934) and
+[#636](https://github.com/koverstreet/bcachefs/issues/636) are the two I
+kept returning to), which was reassuring in the way that only "it's not
+just me" can be.
 
 The two obvious explanations were both wrong, and being wrong was the
 useful part. It wasn't the OOM killer: it never fired. And swap didn't
@@ -51,30 +55,31 @@ still while the disks caught up.
 
 The culprit was an SRCU lock held far too long. SRCU (sleepable
 read-copy-update) is what lets a reader hold a lightweight lock across a
-sleep. bcachefs takes one in the btree commit path. Under a heavy
+sleep. bcachefs takes one per btree transaction. Under a heavy
 writeback storm, the background workers pushing data down to the slow
-HDD tier could monopolise the btree locks, and a foreground metadata
-lookup (the thing `ls` does) would sit behind them holding its SRCU read
-lock, for as long as the physical writes to spinning rust took. That's
-your multi-minute freeze: not a deadlock exactly, a starvation,
+HDD tier could monopolise the btree locks while holding their SRCU read
+locks for as long as the physical writes to spinning rust took, and a
+foreground metadata lookup (the thing `ls` does) would sit behind them.
+That's your freeze: not a deadlock exactly, a starvation,
 foreground work stuck behind background work stuck behind a slow disk.
 
-The fix lived in the allocation context and lock ordering: dropping the
-long-held locks properly (`bch2_trans_unlock_long`) and using `GFP_NOFS`
-in the right spots so a memory allocation under those locks couldn't
-recurse back into the filesystem. With it, `time ls -la` came back in
-under ten milliseconds during aggressive background ingestion. The
+The fix lived in the lock discipline: dropping the long-held locks
+properly (`bch2_trans_unlock_long`) so a reader never sits on its SRCU
+lock across a blocking wait. With it, `time ls -la` came back in under
+ten milliseconds during aggressive background ingestion. The
 terminal stopped freezing.
 
 ## Reaching out, and getting reviewed in public
 
-I wrote the patches up and, being honest, posted them to r/bcachefs
+I wrote the patches up and, being honest, posted them to
+[r/bcachefs](https://www.reddit.com/r/bcachefs/)
 partly to reach Kent, and partly out of impatience. Public interest for
 a nifty improvement never hurts, but mostly I wanted eyes on it.
 
 I got them, fast, and the review was instructive in a way I didn't
 expect. Kent looked at it (and mentioned, in passing, that this was the
-first run of *POC*, his own AI assistant, doing a first pass of the code
+first run of *POC*, [his own AI assistant](https://poc.bcachefs.org),
+doing a first pass of the code
 review; we are all, it turns out, working with something in the loop
 these days). His feedback landed on exactly the thing I'd gotten too
 clever about: my `drop_locks_long_do()` helper was a nice idea but
@@ -84,9 +89,10 @@ to unlock, block for a few seconds, and *then* unlock long. He was also
 politely unconvinced that my mechanism fully explained the freezes, and
 asked the only question that matters: what does your testing show?
 
-And he pointed me at ktest (his existing test harness) instead of the
-QEMU-plus-`dm-delay` contraption I'd been building to fake slow 50 ms
-disks. No need to roll your own framework.
+And he pointed me at [ktest](https://github.com/koverstreet/ktest) (his
+existing test harness) instead of the QEMU contraption I'd been building
+to fake a slow disk with blkio write throttling. No need to roll your
+own framework.
 
 ## What it turned into
 
@@ -113,14 +119,21 @@ an allocation, made while holding filesystem locks, trigger reclaim that
 writes a swap page *back into the very filesystem you're allocating btree
 nodes for*. That's a circular wait dressed up as memory management. The
 fix is a careful audit of allocation flags (`GFP_NOFS` and `NOIO`
-instead of `GFP_KERNEL`, and `mapping_set_gfp_mask` on the swap file's
-address space) so reclaim can never close the loop. With it, swap runs
-under maximum exhaustion without wedging.
+instead of `GFP_KERNEL`), plus armour inside the swap path itself —
+`memalloc_noreclaim_save()` around the swap I/O, pinned btree nodes, and
+a pre-reserved btree cache — so reclaim can never close the loop. With
+it, swap runs under maximum exhaustion without wedging. The patches are
+up for review as [swap file support via
+SWP_FS_OPS](https://github.com/koverstreet/bcachefs-tools/pull/646) and
+[swapfile reclaim-pressure
+tests](https://github.com/koverstreet/ktest/pull/63), posted by Darafei
+Praliaskouski (Komzpa), who drove the upstreaming; the sign-offs carry
+us both.
 
 All of this happened next to a third thread: online filesystem
-shrinking, a long-requested feature I'd taken a first swing at before
-another developer, jullanggit, did the cleaner implementation. Different
-story, same neighbourhood.
+shrinking, a long-requested feature that another developer, jullanggit,
+and I both swung at around the same time — his implementation was the
+cleaner one. Different story, same neighbourhood.
 
 ## The thing I'd actually tell you
 

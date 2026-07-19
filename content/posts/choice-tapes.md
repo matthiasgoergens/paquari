@@ -66,16 +66,16 @@ val float : t -> lo:float -> hi:float -> float
 
 Every draw arrives with its bounds attached. In proptest I had to
 migrate each strategy so the engine would know the type and range of
-each decision; here the seam is typed already. Wrap these dozen
+each decision; here the seam is typed already. Wrap a handful of
 functions so they record to (and replay from) a tape when one is
 installed, and every existing generator participates, including
 everything `[@@deriving quickcheck]` produces. I verified the claim on
-a derived record type: one generation records 89 typed choices, and
+a derived record type: one generation records 113 typed choices, and
 replaying that tape under a completely different RNG seed reproduces
 the identical value. The vendored base_quickcheck in my repo is
-byte-for-byte unmodified; a dune workspace resolves the
-`splittable_random` library name to my shim, and that is the entire
-integration.
+unmodified except for its dune file and one portability fix; a dune
+workspace resolves the `splittable_random` library name to my shim, and
+that is the entire integration.
 
 (An earlier draft of this post said that `Generator.fn`'s randomly
 generated functions do not shrink, because `fn` splits the random
@@ -92,14 +92,18 @@ Six properties, 100 seeds each, identical failing examples handed to
 both shrinkers. "Stock" is base_quickcheck's own greedy loop, exactly
 as `Test.run` performs it.
 
-| property | stock minimal | tape minimal | tape avg calls |
-|---|---|---|---|
-| int uniform, fail iff >= 123457 | 0/100 (worst `766135`) | 100/100 | 38 |
-| pair, fail iff a + b >= 100 | 0/100 (worst `(481 781)`) | 100/100 | 22 |
-| list, fail iff length >= 3 | 0/100 (worst `(12 100 61)`) | 100/100 | 466 |
-| list, fail iff sum >= 100 | 0/100 (worst `(15 91)`) | 100/100 | 98 |
-| filtered evens, fail iff >= 100 | 0/100 (worst `21150`) | 100/100 | 91 |
-| bind: length-prefixed list, sum >= 100 | 0/100 (a 64-element monster) | 100/100 | 49 |
+| property | stock minimal | tape minimal | stock avg calls | tape avg calls |
+|---|---|---|---|---|
+| int uniform, fail iff >= 123457 | 0/100 (worst `766135`) | 100/100 | 0 | 38 |
+| pair, fail iff a + b >= 100 | 0/100 (worst `(481 781)`) | 100/100 | 0 | 22 |
+| list, fail iff length >= 3 | 0/100 (worst `(12 100 61)`) | 100/100 | 5 | 466 |
+| list, fail iff sum >= 100 | 0/100 (worst `(15 91)`) | 100/100 | 4 | 98 |
+| filtered evens, fail iff >= 100 | 0/100 (worst `21150`) | 100/100 | 0 | 91 |
+| bind: length-prefixed list, sum >= 100 | 0/100 (a 64-element monster) | 100/100 | 0 | 49 |
+
+One honest caveat lives in the stock column: its call counts are near
+zero, because it has almost nothing to try. The tape engine buys its
+minimality with test executions.
 
 The bind row is the point. `let%bind len = ... in list_with_length
 ~length:len ...` has no derivable shrinker at all, so stock reports
@@ -112,7 +116,7 @@ My favourite single number is from a three-way chained bind, `a` in
 10..1000, `b` in 10..a, `c` in 10..b, failing unconditionally. The
 tape engine's first proposal sets every choice to its target; replay
 walks the binds again, so the dependency structure holds by
-construction, and it lands on `(10, 10, 10)` in one attempt.
+construction, and it lands on `(10, 10, 10)` on its first proposal.
 
 ## What the tape sees inside base_quickcheck
 
@@ -123,7 +127,9 @@ First, `Generator.int_inclusive` is a weighted union: 5% `return lo`,
 5% `return hi`, 90% uniform. The constant branches record a tape of
 one choice (the branch selector), and escaping to the shrinkable
 uniform branch would lengthen the tape, which a shortlex-ordered
-search must refuse. So one failing case in ten starts inside a trap.
+search must refuse. The `lo` branch is harmless — that case is already
+minimal — but one failing case in twenty starts inside the `hi`-branch
+trap.
 Hypothesis structures the same boundary bias inside the sampler, one
 typed choice with a biased distribution, and every case is
 shrinkable. Distributional bias belongs in the draw, not in generator

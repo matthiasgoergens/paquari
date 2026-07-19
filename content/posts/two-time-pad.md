@@ -1,17 +1,17 @@
 +++
 title = "The two-time pad wanted a 5-gram, not a neural net"
 date = 2026-07-16T23:28:00+08:00
-description = "For years I threw LSTMs, unsupervised diff-recovery, and a 17 GB corpus at a reused one-time pad. What actually broke it was a character 5-gram and a beam search that refuses to commit early — and I should have tried that on day one."
+description = "For years I threw LSTMs, unsupervised diff-recovery, and a 15 GB corpus at a reused one-time pad. What actually broke it was a character 5-gram and a beam search that refuses to commit early — and I should have tried that on day one."
 +++
 
-*The original puzzle, preserved on the Internet Archive: [Decrypting the Two-Time Pad](https://web.archive.org/web/20070303124822/http://www.itasoftware.com/careers/puzzle_archive.html?catid=39).*
+*The original puzzle, preserved on the Internet Archive: [Decrypting the Two-Time Pad](https://web.archive.org/web/20070303124822/http://www.itasoftware.com/careers/puzzle_archive.html?catid=39) — scroll down past the other puzzles to find it.*
 
 There is an old ITA Software hiring puzzle from around 2004: you intercept two
 messages, both encrypted with a one-time pad over a 46-character alphabet
 (space, `A–Z`, `0–9`, and nine punctuation marks). Encryption is character-wise
 addition modulo 46. A one-time pad is the one cipher that is provably
-unbreakable — given a single ciphertext, every plaintext of the right length is
-exactly as likely as any other, and no amount of computation helps. The catch,
+unbreakable — given a single ciphertext, any plaintext of the right length
+could have produced it, and no amount of computation tells you which. The catch,
 and the whole puzzle, is in the word *one*. The sender used the **same** pad for
 both messages.
 
@@ -50,7 +50,7 @@ where the git history gets embarrassing. I did an architecture search: dense
 residual networks with PReLU, GRUs, a plain RNN, DenseNet-style skip connections,
 before settling on a two-layer LSTM — BatchNorm before the recurrence, mixed
 precision, a 150-character window, gradient clipping, learning-rate schedules. I
-preprocessed 17 GB of Project Gutenberg into byte indices with a Rust tool that
+preprocessed 15 GB of Project Gutenberg into byte indices with a Rust tool that
 memory-mapped the corpus and streamed random snippets to the GPU over a pipe, so
 I would never run out of training data. There are branches in that repository
 called `fractal`, `frac-again`, `truncated`, and `more-loss`. There is a whole
@@ -79,14 +79,15 @@ had spent two years not asking: how well does the *dumbest possible* prior do?
 
 So I rebuilt the whole thing from scratch around the baseline I should have
 started with. The language model is a character 5-gram: for every four-character
-context, count what character came next, across a couple of dozen public-domain
-books. Unseen contexts back off to shorter ones with Witten-Bell smoothing, so
+context, count what character came next, across thirty-five public-domain
+books. Unseen contexts are interpolated with shorter ones, Witten-Bell style, so
 nothing ever gets zero probability. That is the entire model. It has no
 parameters to train, no GPU, no schedule. Built from 24 million characters, it
 takes about seven seconds.
 
 Drop it into the same beam search, and it recovers about **97% of the characters**
-of ordinary prose. The errors are almost all proper nouns and digit runs — the
+of nineteenth-century prose (96.8% on a broader held-out mix). The errors cluster
+on proper nouns and digit runs — the
 places where both texts are genuinely unpredictable at the same spot, and the
 information to separate them simply is not there. And here is the part that
 stung: widening the beam past about four thousand hypotheses changed the answer

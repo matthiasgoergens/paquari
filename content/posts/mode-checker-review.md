@@ -35,7 +35,10 @@ Error: The value "Splittable_random.For_tape.set_tape" is "nonportable"
          the record at line 7.
 ```
 
-No annotations anywhere in my code. The checker inferred, from the
+No annotations anywhere in my code. (The quote above is trimmed for
+width; the verbatim compiler output is [in the
+repo](https://github.com/matthiasgoergens/tapecheck/blob/master/blog/materials/mode-error-before.txt).)
+The checker inferred, from the
 definition alone, that a function closing over a global mutable ref
 cannot be handed to another domain, and told me which value, in which
 closure, violated which expectation, and why the expectation existed.
@@ -59,7 +62,7 @@ No global, no install/uninstall dance, and every shrink attempt
 becomes self-contained: its own tape, its own RNG state, nothing
 shared. After the refactor the same probe, now building all of its
 state inside the closure, compiles and runs. The before and after are
-one commit apart, and the diff is the honest one: signatures now say
+one commit apart, and the shim's diff is the honest one: signatures now say
 what the code always meant.
 
 ## The compiler had a second opinion
@@ -104,7 +107,8 @@ matter for correctness: taking the lowest failing index in a
 generation batch reproduces the sequential engine's choice of failing
 example exactly, and shrink acceptance still goes through one
 shortlex comparison against the incumbent, so results stay
-deterministic. Attempt counts are identical at every domain count.
+deterministic. Attempt counts are identical at every domain count on this
+benchmark (the pool can speculate past the sequential count in general).
 
 Benchmark: a bind-heavy generator (length 1..256, then that many
 bounded ints), a test body with a fixed ~100us of work, failures in
@@ -127,8 +131,9 @@ domains= 1  wall 8.03s
 domains= 8  wall 2.00s
 ```
 
-Flambda2 runs the sequential engine 12 percent faster out of the box,
-and the parallel ceiling is the same. Identical results throughout:
+The OxCaml toolchain — Flambda2, plus a different compiler version, so
+the credit is shared — runs the sequential engine 12 percent faster out
+of the box, and the parallel ceiling is the same. Identical results throughout:
 same failures found, same 57000 shrink attempts, on both compilers at
 every width.
 

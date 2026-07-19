@@ -1,7 +1,7 @@
 +++
 title = "What the borrow checker won't review"
 date = 2026-07-16T23:59:00+08:00
-description = "Two bcachefs bugs that cost me a week each. The borrow checker would have caught neither: one is an allocation in the wrong context, the other a loop that never ends, but a proof assistant catches the second. Different reviewers for different bugs."
+description = "Two bcachefs bugs that ate my week. The borrow checker would have caught neither: one is an allocation in the wrong context, the other a loop that never ends, but a proof assistant catches the second. Different reviewers for different bugs."
 +++
 
 A recurring theme on this blog is handing your code to a compiler and
@@ -12,7 +12,9 @@ that keeps them from deadlocking) and I want to be honest about where
 
 It's a live question for the project, not a rhetorical one. bcachefs is
 in the middle of a slow rewrite into Rust, and it already carries a set
-of Verus proofs for its trickier data structures (the eytzinger search
+of [Verus](https://github.com/verus-lang/verus)
+[proofs](https://github.com/koverstreet/bcachefs-tools/tree/master/verus-proofs)
+for its trickier data structures (the eytzinger search
 tree, the `bpos` ordering). So "which of these bugs does the machine
 catch" is something the codebase is actively betting on.
 
@@ -32,12 +34,18 @@ is trying to free memory. Every filesystem knows this shape and guards
 against it: allocate with `GFP_NOFS`, or run under a `PF_MEMALLOC_NOFS`
 scope, and reclaim won't re-enter the filesystem.
 
-Swap doesn't respect that guard. Swap writeout from reclaim is gated by
-`__GFP_IO`, not `__GFP_FS`, so `PF_MEMALLOC_NOFS` stops reclaim from
-re-entering the filesystem the ordinary way but does nothing to stop
-reclaim issuing a *swap write*, which re-enters the same filesystem
-anyway. Put swap on bcachefs and the whole `NOFS` contract quietly
-changes meaning. This deadlocks:
+Swap doesn't fully respect that guard. Swap writeout from reclaim is
+gated by `__GFP_IO`, not `__GFP_FS` — but the mm has known how to
+special-case this since 2022: [NeilBrown's
+d791ea676b66](https://github.com/torvalds/linux/commit/d791ea676b66)
+("mm: reclaim mustn't enter FS for SWP_FS_OPS swap-space", v5.19) makes
+reclaim refuse to enter the filesystem for a swap-cache folio under
+`__GFP_IO` alone when the swap space goes through filesystem operations,
+which is exactly how swap on bcachefs works. So `PF_MEMALLOC_NOFS` does
+close the ordinary swap-writeout path. What it cannot close is the
+`GFP_KERNEL` path: with both `__GFP_FS` and `__GFP_IO` set, reclaim is
+free to write a swap page straight back into the filesystem that is
+trying to free memory. This deadlocks:
 
 ```
 reconcile thread
@@ -51,7 +59,11 @@ journal write: blocked on the write-buffer lock
 A `GFP_KERNEL` allocation, held under a lock the journal needs, on a
 filesystem that happens to host swap. The fix is one word: `GFP_NOIO`
 instead of `GFP_KERNEL`, which forbids reclaim from starting I/O and so
-cannot recurse into swap. The hard part isn't the fix, it's *finding
+cannot recurse into swap. (`GFP_NOFS` would also have blocked this
+particular recursion, thanks to the SWP_FS_OPS carve-out above; `NOIO`
+is the conservative choice — it also covers swap-slot allocation and any
+swap path the mm doesn't special-case.) The hard part isn't the fix,
+it's *finding
 every site*: every allocation that runs under a lock the write or journal
 path can wait on, across the allocation.
 
@@ -78,8 +90,9 @@ ones. When two extents collide in the dedup index but a byte-for-byte
 check says their contents actually differ, it's supposed to give up on
 that extent. It didn't: it left the extent's "pending" flag set, so the
 next reconcile pass picked it up again, checked it again, gave up again,
-forever. Under the right input the filesystem's journal simply freezes,
-live-locked on an extent it will never resolve.
+forever. Hand it an extent that shares a checksum with different
+contents, and the reconcile queue never drains: live-locked on work it
+will never resolve.
 
 This is a liveness bug. The code isn't doing something *wrong*, it's
 failing to make *progress*. And progress is exactly where static analysis
@@ -109,7 +122,8 @@ So two bugs, two reviewers, and neither is the borrow checker:
   clause. The one rung tall enough to see the loop that never ends.
 
 "Let the compiler review your code" is still the right instinct: I
-wouldn't be writing a shrink engine around a mode checker otherwise. But
+wouldn't have built [a shrink engine around a mode
+checker](@/posts/mode-checker-review.md) otherwise. But
 the free reviewer reviews the least, and the bugs that cost the most days
 were one and two rungs above it.
 

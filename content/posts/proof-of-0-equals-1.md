@@ -101,8 +101,9 @@ them connect it to a concrete exploit.
 
 Bobbin Threadbare, who leads Miden, did exactly that within a day:
 "my guess is that you constructed two Miden VM programs which do
-different things but hash to the same value ... `JOIN` and `SPLIT`
-blocks are hashed in exactly the same way," with a link straight to
+different things but hash to the same value. This is actually not too
+difficult to do right now as `JOIN` and `SPLIT` blocks are hashed in
+exactly the same way," with a link straight to
 the `TODO`. Exactly right. I confirmed it, and added the thing that
 worried me more than this single instance: the code kept picturing an
 attacker who crafts malicious *source programs*, when a real attacker
@@ -134,17 +135,19 @@ a PR, mostly to unblock his own team while the discussion continued.
 
 The other candidates each had a catch at the time. Domain separation,
 setting a reserved capacity register of the sponge to a per-node-type
-value, is the simplest and cheapest idea, but the sponge's capacity is
-also its security margin, and the hash function then in use had none to
-spare. Using different output slots as the digest costs no field
+value, is the simplest and cheapest idea — and was the Miden team's
+preferred direction — but the sponge's capacity is also its security
+margin, and spending an element of it was believed to cost security
+bits. Using different output slots as the digest costs no field
 operations but complicates the constraint system.
 
 Here is the part I did not see coming. Miden was already migrating to a
 new hash function, RPO (Rescue-Prime Optimized), and that migration
-changed the arithmetic of the decision. RPO's wider state left a
-capacity register genuinely free, so the objection to domain
-separation, the one thing that had made it look expensive, simply
-evaporated. [The fix they
+changed the arithmetic of the decision. RPO's redesigned padding scheme
+freed the second capacity element, and its security analysis showed
+that spending it costs nothing below the 128-bit security target, so
+the objection to domain separation, the one thing that had made it look
+expensive, simply evaporated. [The fix they
 shipped](https://github.com/0xMiden/miden-vm/pull/682) is not Kmett's
 affine transform; it writes a domain specifier into the second capacity
 element when hashing a control block, composed from the block's opcode
@@ -154,9 +157,9 @@ I still find the affine mixer the prettier answer, for a reason that
 outlives this particular bug. If your hash is collision-resistant, it
 already sends linearly-adjusted inputs to unrelated outputs, so a
 distinct multiplier per node type gives you a distinct domain, and you
-can keep minting them: a fresh prime for every new node type you ever
-add, unboundedly many, at the price of one multiply and add and no
-state at all. Domain separation by capacity register spends a scarce
+can keep minting them: a fresh nonzero multiplier for every new node
+type you ever add, unboundedly many, at the price of one multiply and
+add and no state at all. Domain separation by capacity register spends a scarce
 resource, the sponge state that is also your security margin, and caps
 the number of domains at the bits you are willing to give up. One
 technique scales with the algebra of the hash; the other rations a
@@ -200,7 +203,8 @@ leaving it undone impossible to misjudge. That is often the most
 useful thing an outsider can do for a serious project, and the Miden
 folks were a pleasure to do it with.
 
-The full artefact, including the Dockerised proof you can run
-yourself, is [on GitHub](https://github.com/matthiasgoergens/miden-collision);
+The full artefact, including the Dockerised proof (runnable as of
+December 2022 — the script tracks Miden's live `next` branch, which has
+long since moved on), is [on GitHub](https://github.com/matthiasgoergens/miden-collision);
 the original report and the design discussion are [Miden VM issue
 605](https://github.com/0xMiden/miden-vm/issues/605).

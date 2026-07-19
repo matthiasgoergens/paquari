@@ -1,7 +1,7 @@
 +++
 title = "A solution in search of a problem"
 date = 2026-07-16T23:29:00+08:00
-description = "Mozak's zkVM let mutually-distrusting programs coordinate without seeing each other's code. I spent months failing to explain why anyone would want that — because most of the field never enters the regime where the problem exists."
+description = "Mozak's zkVM let mutually distrusting programs coordinate without seeing each other's code. I spent months failing to explain why anyone would want that — because most of the field never enters the regime where the problem exists."
 +++
 
 A few years ago I was CTO of Mozak, and we built a RISC-V zkVM: write
@@ -53,8 +53,8 @@ by a proof of exactly that program at exactly that position, and
 checks everyone was bound to the same script. It never reads what
 anyone said.
 
-So: a token program insists transfers conserve tokens and that the
-relevant wallets agree; a wallet approves by proving its owner signed
+So: a token program insists the spending wallet approves of each
+transfer; a wallet approves by proving its owner signed
 off; each is a black box to the other; and a transaction settles when
 all the proofs land and the cast checks out.
 
@@ -68,22 +68,23 @@ supports it, and it is the answer the field reaches for by reflex.
 Recursion is sound, and for its intended job — compressing many
 proofs into one — we used it too. But as a *coordination* mechanism
 it has a closed-world assumption baked in: to verify the wallet's
-proof, the token program must name the wallet's verification key *at
+proof, the token program must bake the wallet's circuit into its own *at
 authoring time*. Now run the scenario that actually motivated us. A
 corporate wallet requires CEO and CTO approval, or a sign-off from
 compliance above some threshold — private, changing rules. Years
 after the token shipped, a regulator requires a screening attestation
 from an accredited provider for large transfers. Under recursion the
 token program would have needed the compliance provider's
-verification key baked in before that provider existed. Nobody can be
+circuit baked in before that provider existed. Nobody can be
 added to a transaction who was not foreseen by the programs already
 in it, and some program must sit at the root of the verification tree
 and see everyone.
 
 In the script model the compliance program just joins the cast. The
 wallet's policy demands its presence; the token program neither knows
-nor cares — with separate scripts it need not even learn compliance
-was involved. The participant set is decided per transaction, not
+nor cares — with separate scripts, a composition mechanism the later
+posts have to make precise, it need not even learn compliance was
+involved. The participant set is decided per transaction, not
 frozen per program.
 
 I found this argument completely convincing. The people I pitched it
@@ -108,7 +109,7 @@ The proof at the bottom certifies one sentence: *the interpreter ran
 correctly*.
 
 If that is your world, my problem statement is unintelligible.
-Mutually-distrusting programs? They all trust the interpreter.
+Mutually distrusting programs? They all trust the interpreter.
 Opaque counterparties? The executor reads every contract. Unforeseen
 third parties? Deploy another contract; the interpreter mediates. The
 problem does not exist — because the architecture bought its absence,
@@ -141,8 +142,10 @@ so different distrusting parties prove different programs separately
 — a hardware signer can produce the wallet's approval offline on
 Monday and a relayer can assemble the settlement on Friday without
 ever touching a key. Nobody *sees* all the programs, so counterparties
-stay opaque: a program reveals neither its code nor its private
-inputs, only what the script says. Mediation lives in a document
+stay opaque: in the finished design, a program reveals neither its code
+nor its private inputs, only what the script says. (The prototype
+proved execution; the zero-knowledge blinding itself was never built.)
+Mediation lives in a document
 rather than an executor, so the participant set stays open — the
 compliance program nobody foresaw joins by appearing in a cast. And
 there is no interpreter in the circuit to pay for: programs compile
@@ -150,8 +153,8 @@ to the machine's own instruction set and are proven directly.
 
 The honest comparison, briefly. Recursion-as-coordination assumes the
 relationships are known at authoring time — precisely when you do not
-have this problem. Monolithic proving (zkEVMs, Cairo) assumes one
-trusted executor and public contracts. The nearest cousin is Aleo,
+have this problem. Monolithic proving (zkEVMs, Cairo) assumes a single,
+all-seeing executor and public contracts. The nearest cousin is Aleo,
 which also proves calls as separate transitions bound into a
 transaction — and where, as [Equilibrium's deep
 dive](https://equilibrium.co/writing/privacy-blockchains-and-aleo-deep-dive)
