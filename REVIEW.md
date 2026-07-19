@@ -1,11 +1,23 @@
 # Blog review — 2026-07-19
 
 > **Status (later on 2026-07-19): all fixes from this review have been
-> applied to the posts.** This file is kept as the pre-fix record; line
-> numbers refer to the versions reviewed, not the current ones. Two
-> non-post items were left alone on purpose: committing/pushing is the
-> author's call (including the untracked `shy-heap.md`), and the
-> Görgens/Schorer sign-off question is a personal decision, not an edit.
+> applied to the posts and committed** (post fixes, the shy-heap post, and
+> this file, in three commits; pushing remains the author's call). This
+> file is kept as the pre-fix record; line numbers refer to the versions
+> reviewed, not the current ones. The Görgens/Schorer sign-off question
+> is a personal decision, not an edit.
+>
+> **Lean verification follow-up:** the `shy-heap-lean` build was
+> subsequently run (fresh elan, pinned mathlib v4.32.0). It *failed*:
+> `CanonicalMatroid.lean` — the module behind the "heap-matroid
+> structure proven" claim — had a broken proof block in
+> `canonicalMatroid_dualCanonical` (wrong `fresh` argument, plus a
+> metavariable elaboration trap). The "unverified" caution in §3 was
+> warranted. The block was rewritten; the full build is now green (1001
+> jobs) and both `offlineSurvivors_eq_exact` and
+> `canonicalMatroid_dualCanonical` depend only on
+> propext/Classical.choice/Quot.sound — no `sorryAx`. The post's
+> "now standing" claim is now true. (Fix uncommitted in shy-heap-lean.)
 
 **This file lives at the repo root, outside `content/` and `static/`, so Zola
 never sees it and it cannot be published.** Delete or `.gitignore` it if you
