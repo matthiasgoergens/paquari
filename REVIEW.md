@@ -461,3 +461,32 @@ hyphen after an -ly adverb.
 7. `two-time-pad.md`: 17 GB → ~15 GB; "couple of dozen" → 35; the
    perfect-secrecy phrasing.
 8. Everything in the per-post nits lists, at leisure.
+
+---
+
+## Addendum: `running-95th-percentile.md` (added while this review was in flight)
+
+A ninth post landed mid-review; it got the same treatment. **Verified:**
+all literature links and characterizations (Munro–Paterson via Crossref;
+Guha–McGregor ICALP'07 / PODS'06 / SICOMP'09 titles and content;
+Chakrabarti–Jayram–Pătraşcu SODA'08 "tight" via its own abstract; Fredman
+JACM'99; the CMU pairing-heaps PDF); the rebalance arithmetic (0.095 per
+arrival, ≈21-arrival gaps, ≈20/≈1 fresh children); the deterministic
+degree-halving bound; the certainty ⇒ Θ(n) space argument; the companion
+repo exists and is a genuinely fuller write-up. **Fixed:** "Expected space
+Θ(√n)" contradicted the post's own Θ(√(n log n)) margin → Θ̃(√n) (also in
+the front-matter description); the Fibonacci dismissal overstated what an
+input-independent *bound* implies → "no known analysis lets the random
+order help"; "a gentle slope, not a cliff" gained the caveat the companion
+repo itself carries; "slides and shrinks" → shrinks only relative to the
+stream; "95% of the stream never enters" → the honest Θ̃(1/√n) fraction;
+the Guha–McGregor / CJP attribution disentangled (upper bound vs matching
+lower bound); the contraction step now names the bounded-conditional-
+expectation condition it needs. **Left as-is:** the punchline
+(E[degree] = O(1) for two-pass pairing-heap deletes on shuffled input) is
+a fixed-point heuristic rather than a proven theorem — very likely true,
+and the post presents it as an analysis of this specific workload, which
+is the right register. Note the supporting simulation is local-only
+(`~/prog/linear-running-median`) and covers the median with multipass
+consolidation, not the 95th percentile with two-pass — worth remarking if
+the code ever joins the companion repo.
