@@ -1,7 +1,7 @@
 +++
 title = "Exact running quantiles in linear expected time, if the input is shuffled"
 date = 2026-07-19
-description = "Maintain the exact 95th percentile of a stream, online, with no sketches and no approximation. Random arrival order turns a boring Θ(n log n) problem into a Θ(n) one: a √n window if you may fail once in a blue moon, and — the punchline — the naive two-heap method already runs in expected linear time when you build it from pairing heaps."
+description = "Maintain the exact 95th percentile of a stream, online, with no sketches and no approximation. Random arrival order turns a boring Θ(n log n) problem into a Θ(n) one: a Θ̃(√n) window if you may fail once in a blue moon, and — the punchline — the naive two-heap method already runs in expected linear time when you build it from pairing heaps."
 +++
 
 Everyone who runs a service has the dashboard: p50, p95, p99 latency.
@@ -36,10 +36,10 @@ the elements within Θ(√(n log n)) ranks of the current answer, plus an
 exact counter of how many discarded elements sit above the window. The
 answer is exactly determined whenever it lies in the window, and —
 important — you always know when it doesn't; the algorithm fails loudly,
-never silently. The window slides and shrinks as the quantile
-concentrates. Expected space Θ(√n), expected total time Θ(n): two
-comparisons per element for almost everything, since 95% of the stream
-never enters the window at all.
+never silently. The window slides and, relative to the stream, shrinks as the quantile
+concentrates. Expected space Θ̃(√n), expected total time Θ(n): two
+comparisons per element for almost everything, since only a Θ̃(1/√n)
+fraction of the stream ever lands inside the window.
 
 And Ω(√n) is necessary, even if you only cared about the *final*
 answer: each of the Θ(√n) elements straddling the boundary is the exact
@@ -108,15 +108,17 @@ random order:
    between two deletions of the big heap, ≈ 1 for the small one.
 
 The degree at deletion times therefore follows d′ ≤ d/2 + O(1) in
-expectation — a contraction with bounded noise, so E[degree] = O(1),
-so each deletion costs O(1) in expectation. Summing: n inserts at O(1)
+expectation — the noise is the geometric inter-deletion gap, bounded
+whatever the current degree, which is all a contraction needs — so
+E[degree] = O(1), so each deletion costs O(1) in expectation. Summing: n inserts at O(1)
 actual, Θ(n) deletions at O(1) expected, queries free. Expected total
 Θ(n), optimal because every element needs at least one comparison.
 
 The heap choice is load-bearing in both directions. Binary heaps delete
 in Θ(log n) expected time (sift-down runs to the leaves). Fibonacci
-heaps amortise Θ(log n) per delete unconditionally — their guarantee is
-input-independent, so the random order cannot help them. And a naive
+heaps amortise Θ(log n) per delete unconditionally — their proven
+guarantee is input-independent, and no known analysis lets the random
+order help. And a naive
 "root with an unordered child list, rescan everything on delete"
 structure pays the same Θ(d) per deletion but never contracts the
 degree: the degree just grows by ~20 between deletions until it is
@@ -133,7 +135,9 @@ the cost slides smoothly to the classical Θ(n log n) worst case (the
 original Fredman–Sleator–Tarjan amortised bounds), with no regime
 detection and no safety valve. Actual cost is Θ(root degree at delete
 times), which simply grows as the input's interleaving departs from
-random — a gentle slope, not a cliff. My window-plus-rebuild scheme
+random — a gentle slope, not a cliff (how gentle, exactly, is delicate:
+whether this restricted workload can even realise the known adversarial
+near-Θ(log n) sequences is not obvious). My window-plus-rebuild scheme
 achieves the same cap only through its explicit fallback, which is a
 clunky thing to need.
 
@@ -154,10 +158,10 @@ started it; Guha and McGregor mapped out random-order quantiles
 2007](https://doi.org/10.1007/978-3-540-73420-8_61), [SICOMP
 2009](https://doi.org/10.1137/07069328X)) including the one-pass Ω(√n)
 lower bound and exact selection with polylog space in O(log log n)
-passes, resolving Munro and Paterson's open question;
-[Chakrabarti, Jayram and
+passes; [Chakrabarti, Jayram and
 Pătraşcu](https://www.cs.dartmouth.edu/~ac/Pubs/soda08-median-ds.pdf)
-(SODA 2008) showed the pass count is tight. A fuller write-up with all
+(SODA 2008) matched the pass count from below, together resolving Munro
+and Paterson's open question. A fuller write-up with all
 the derivations lives in a [companion
 repo](https://github.com/matthiasgoergens/running-95th-percentile).
 
