@@ -97,3 +97,30 @@ Viterbi lattice, a min-cost flow, a circuit constraint — and reach for it befo
 trusting your own hand-rolled cleverness, especially when that cleverness starts
 telling you the ceiling is lower than you hoped. It is often just telling you where
 it got tired.
+
+## Postscript: when the ceiling stops being reachable
+
+The whole satisfaction above was the *certificate* — not just a long chain, but a
+proof that nothing longer exists. So I couldn't resist asking what happens on a
+bigger list. ITA's 6561 titles came from MovieLens, and MovieLens today ships
+about ten times as many; after normalising I had 57,130 titles. Same CP-SAT model,
+pointed at the bigger graph.
+
+The chain grew to **4,087 titles** — thirteen times the 310 — and every overlap
+verifies. But here is the honest part: it is *not* optimal, and I cannot tell you
+how far from optimal it is. On the small list CP-SAT closed the gap in ten seconds
+and handed me a bound that met the answer. On the big list the cyclic core alone is
+19,255 titles, a longest simple path through it is genuinely hard, and the solver's
+upper bound stayed thousands above whatever it had found. 4,087 is just the longest
+chain it had produced when I stopped — and I stopped for unglamorous reasons: each
+warm-started round bought fewer titles than the last (2910, 3439, 4012, 4087), and
+the long runs kept getting killed before they finished.
+
+So this number is a *floor*, not an answer — the exact mirror image of the small
+case. There the pleasing thing was a proven ceiling; here the honest thing is
+admitting there isn't one within reach, only a chain that keeps lengthening for as
+long as you feed it compute, with no way from the inside to know how much is left.
+That is its own lesson about scale: the exact-answer move that felt like mastery at
+6561 titles quietly stops paying out at 57,000, and the grown-up response is to say
+so — to report 4,087 as a partial result with its gap wide open, not to quote it in
+the same breath as the 310 as though it were the same kind of number.
