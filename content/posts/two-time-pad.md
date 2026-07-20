@@ -4,7 +4,7 @@ date = 2026-07-16T23:28:00+08:00
 description = "For years I threw LSTMs, unsupervised diff-recovery, and a 15 GB corpus at a reused one-time pad. What actually broke it was a character 5-gram and a beam search that refuses to commit early — and I should have tried that on day one."
 +++
 
-*The original puzzle, preserved on the Internet Archive: [Decrypting the Two-Time Pad](https://web.archive.org/web/20070303124822/http://www.itasoftware.com/careers/puzzle_archive.html?catid=39) — scroll down past the other puzzles to find it.*
+*The original puzzle, preserved on the Internet Archive: [Decrypting the Two-Time Pad](https://web.archive.org/web/20070303124822/http://www.itasoftware.com/careers/puzzle_archive.html?catid=39) — scroll down past the other puzzles to find it. ITA ran [a whole collection of these hiring puzzles](https://web.archive.org/web/20080828230011/http://itasoftware.com/careers/hiringpuzzles.html); the archive page above holds the retired ones.*
 
 There is an old ITA Software hiring puzzle from around 2004: you intercept two
 messages, both encrypted with a one-time pad over a 46-character alphabet
