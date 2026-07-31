@@ -90,16 +90,21 @@ its own post.)
 
 Six properties, 100 seeds each, identical failing examples handed to
 both shrinkers. "Stock" is base_quickcheck's own greedy loop, exactly
-as `Test.run` performs it.
+as `Test.run` performs it. These figures are a dated snapshot of the
+original six benchmark rows: tapecheck
+[`24fb1b3`](https://github.com/matthiasgoergens/tapecheck/commit/24fb1b3a5640b941317db93004da2f6c4d939a25),
+31 July 2026, built with stock OCaml 5.3.0 and Dune 3.24.0. The benchmark
+has since acquired two additional adversarial cases; they are not folded
+into this original six-row comparison.
 
 | property | stock minimal | tape minimal | stock avg calls | tape avg calls |
 |---|---|---|---|---|
 | int uniform, fail iff >= 123457 | 0/100 (worst `766135`) | 100/100 | 0 | 38 |
 | pair, fail iff a + b >= 100 | 0/100 (worst `(481 781)`) | 100/100 | 0 | 22 |
-| list, fail iff length >= 3 | 0/100 (worst `(12 100 61)`) | 100/100 | 5 | 466 |
-| list, fail iff sum >= 100 | 0/100 (worst `(15 91)`) | 100/100 | 4 | 98 |
-| filtered evens, fail iff >= 100 | 0/100 (worst `21150`) | 100/100 | 0 | 91 |
-| bind: length-prefixed list, sum >= 100 | 0/100 (a 64-element monster) | 100/100 | 0 | 49 |
+| list, fail iff length >= 3 | 0/100 (worst `(12 100 61)`) | 100/100 | 5 | 178 |
+| list, fail iff sum >= 100 | 0/100 (worst `(15 91)`) | 100/100 | 4 | 173 |
+| filtered evens, fail iff >= 100 | 0/100 (worst `21150`) | 100/100 | 0 | 90 |
+| bind: length-prefixed list, sum >= 100 | 0/100 (a 64-element monster) | 100/100 | 0 | 56 |
 
 One honest caveat lives in the stock column: its call counts are near
 zero, because it has almost nothing to try. The tape engine buys its
