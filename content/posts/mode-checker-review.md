@@ -82,22 +82,30 @@ Use [Domain.Safe.spawn].
 ```
 
 `Domain.Safe.spawn` is the mode-checked variant: it demands a portable
-closure, exactly the property the probe above established. The system
-composes: the mode error pushed the state into the right place, and
-the safe-spawn API is the payoff for having done it, a spawn that the
-compiler can check does not smuggle shared mutable state across
-domains. (My pool currently uses plain `Stdlib.Domain` so the same
-source builds on stock OCaml; switching the OxCaml build to
-`Domain.Safe` is the natural next step, and the alert will keep
-nagging until I do.)
+closure. Making each *attempt* portable was necessary, but it was not
+enough to make the whole worker closure portable. That closure also
+captures the pool itself: a `Stdlib.Mutex`, condition variables, a
+mutable queue, and a mutable results array. They are synchronised in the
+ordinary sense, but OxCaml's modes cannot verify that discipline, so
+`Domain.Safe.spawn` correctly rejects the closure. It also retains the
+`do_not_spawn_domains` alert; the library's guidance is to use its
+`Multicore` abstraction instead.
+
+So there is no one-line safe-spawn conversion waiting here. A compliant
+OxCaml implementation needs a capsule-aware pool and synchronisation
+design built around `Multicore`, or it needs to disable the parallel pool
+in the OxCaml build. My pool currently uses plain `Stdlib.Domain` so the
+same source builds on stock OCaml. The self-contained attempt state is a
+useful prerequisite for either design, not the completed migration.
 
 I want to dwell on what did NOT happen. I did not add mode annotations
-to my engine. I did not port anything to a new concurrency framework.
-I compiled existing code under a compiler with a stricter type system
-and asked it one question, and it found the one piece of state that
-made parallelism unsafe, explained itself, and pointed at the
-sanctioned alternative. The cost of admission was zero; the review
-was free.
+to my engine, and I have not yet ported the pool to a new concurrency
+framework. I compiled existing code under a compiler with a stricter
+type system and asked it one question. It found the global state that
+made the attempts unsafe to parallelise, and then exposed the separate
+boundary where a stock-OCaml synchronisation design is not enough to
+prove the pool portable. Running the review was nearly free; completing
+an idiomatic OxCaml parallel implementation would be real work.
 
 ## Was it worth it? The numbers
 
