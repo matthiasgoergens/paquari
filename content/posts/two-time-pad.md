@@ -87,13 +87,18 @@ takes about seven seconds.
 
 Drop it into the same beam search, and it recovers about **97% of the characters**
 of nineteenth-century prose (96.8% on a broader held-out mix). The errors cluster
-on proper nouns and digit runs — the
-places where both texts are genuinely unpredictable at the same spot, and the
-information to separate them simply is not there. And here is the part that
-stung: widening the beam past about four thousand hypotheses changed the answer
-by nothing at all. The search was already sitting at the model's ceiling. Every
-gigabyte of corpus and every GPU-hour of LSTM had been buying me almost nothing
-that seven seconds of counting did not already provide.
+on proper nouns and digit runs, where a character 5-gram has especially weak
+local evidence. In the beam-width sweep I ran, every tested width above roughly
+four thousand returned the same final plaintext pair and the same measured
+accuracy. Wider beams therefore bought nothing *in those runs*. This does not
+prove that beam search found the model's global optimum: every tested width
+could still have pruned the same better prefix. But the stability, together
+with where the errors occur, points to the 5-gram model and its short context as
+the remaining bottleneck in this experiment, rather than the tested beam
+widths. A stronger prior or longer-range context could still resolve some of
+those positions. Every gigabyte of corpus and every GPU-hour of LSTM had been
+buying me almost nothing that seven seconds of counting did not already
+provide.
 
 Pointed at the puzzle's actual ciphertexts, it resolves them into the opening of
 Thomas Hardy's *The Mayor of Casterbridge* — the hay-trusser walking to
