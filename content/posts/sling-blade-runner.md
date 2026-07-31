@@ -113,8 +113,9 @@ and handed me a bound that met the answer. On the big list the cyclic core alone
 19,255 titles, a longest simple path through it is genuinely hard, and the solver's
 upper bound stayed thousands above whatever it had found. 4,087 is just the longest
 chain it had produced when I stopped — and I stopped for unglamorous reasons: each
-warm-started round bought fewer titles than the last (2910, 3439, 4012, 4087), and
-the long runs kept getting killed before they finished.
+warm-started incumbent was 2910, 3439, 4012, then 4087. The first two gains were
+comparable (+529 and +573); the final round added only 75, and the long runs kept
+getting killed before they finished.
 
 So this number is a *floor*, not an answer — the exact mirror image of the small
 case. There the pleasing thing was a proven ceiling; here the honest thing is
