@@ -103,7 +103,8 @@ separate, calibrated swap-pressure suite: repeated rounds near full swap
 utilisation, swapoff under pressure, no-swap controls, and ablations of
 the proposed safeguards. The small [upstream smoke
 test](https://github.com/koverstreet/ktest/pull/63) is only the basic
-reclaim-pressure case; the [fuller stress
+reclaim-pressure case by design, not a version of the later matrix that
+was cut down for upstream; the [fuller stress
 suite](https://github.com/koverstreet/ktest/pull/98) contains the tests
 behind the swap analysis. Which is how I could then do the thing I
 actually wanted: make **swap files work on bcachefs**.
