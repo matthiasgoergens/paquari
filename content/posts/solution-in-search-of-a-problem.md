@@ -65,27 +65,48 @@ and always reasonable: have the token program *verify the wallet's
 proof* inside its own execution. Proof recursion. Every major zkVM
 supports it, and it is the answer the field reaches for by reflex.
 
-Recursion is sound, and for its intended job — compressing many
-proofs into one — we used it too. But as a *coordination* mechanism
-it has a closed-world assumption baked in: to verify the wallet's
-proof, the token program must bake the wallet's circuit into its own *at
-authoring time*. Now run the scenario that actually motivated us. A
-corporate wallet requires CEO and CTO approval, or a sign-off from
-compliance above some threshold — private, changing rules. Years
-after the token shipped, a regulator requires a screening attestation
-from an accredited provider for large transfers. Under recursion the
-token program would have needed the compliance provider's
-circuit baked in before that provider existed. Nobody can be
-added to a transaction who was not foreseen by the programs already
-in it, and some program must sit at the root of the verification tree
-and see everyone.
+Recursion is sound, and for its intended job — compressing many proofs
+into one — we used it too. I used to answer this counter-proposal too
+broadly. A modern recursive verifier need not bake the wallet's circuit
+into the token at authoring time: it can take a program identifier or
+verification key as an input. Mozak's own recursive verifier does
+exactly that. An unforeseen program can therefore join a recursive
+construction if the surrounding policy permits it.
 
-In the script model the compliance program just joins the cast. The
-wallet's policy demands its presence; the token program neither knows
-nor cares — with separate scripts, a composition mechanism the later
-posts have to make precise, it need not even learn compliance was
-involved. The participant set is decided per transaction, not
-frozen per program.
+The problem moves rather than disappears: **who vouches for the
+verification tree?** A proof of a black-box user program says that this
+particular program ran with these public commitments. It does not give
+the settlement layer an independently checkable list of the proofs that
+program recursively verified. Perhaps it verified the wallet; perhaps
+it did not. Perhaps it merely emitted bytes saying that it did. To infer
+more, the settlement layer must understand and trust that program's
+composition semantics, or constrain them through another protocol.
+
+Pinning a trusted root program makes the inference sound, but gives one
+program privileged responsibility for the composition. A generic
+recursive accumulator can avoid fixing the child programs in advance,
+but it must itself verify every child and propagate a commitment to the
+complete participant set. That works. It is also no longer recursion
+*alone* as coordination; it is a cast protocol implemented recursively.
+
+The script is that protocol made explicit. The transaction verifier,
+not any user program, checks a proof for every seat in the cast, checks
+that its program identifier matches that seat, and checks that all
+proofs carry the same cast and call-script commitments. No black-box
+participant is trusted to report its own recursive closure.
+
+Now run the scenario that actually motivated us. A corporate wallet
+requires CEO and CTO approval, or a sign-off from compliance above some
+threshold — private, changing rules. Years after the token shipped, a
+regulator requires a screening attestation from an accredited provider
+for large transfers. Dynamic recursion could let the wallet verify that
+new provider. In the script model the provider instead joins the cast:
+the wallet demands its presence, while the generic transaction verifier
+independently checks that its proof is really there. The token program
+neither knows nor cares — with separate scripts, a composition mechanism
+the later posts have to make precise, it need not even learn compliance
+was involved. The participant set is decided per transaction without
+trusting one participant to describe the rest.
 
 I found this argument completely convincing. The people I pitched it
 to mostly did not. They kept asking, gently, when a set of programs
@@ -151,10 +172,12 @@ compliance program nobody foresaw joins by appearing in a cast. And
 there is no interpreter in the circuit to pay for: programs compile
 to the machine's own instruction set and are proven directly.
 
-The honest comparison, briefly. Recursion-as-coordination assumes the
-relationships are known at authoring time — precisely when you do not
-have this problem. Monolithic proving (zkEVMs, Cairo) assumes a single,
-all-seeing executor and public contracts. The nearest cousin is Aleo,
+The honest comparison, briefly. Bare program-directed recursion leaves
+the composition semantics inside an opaque root program. A generic
+recursive accumulator can recover open membership, but only by making
+the cast binding a protocol of its own. Monolithic proving (zkEVMs,
+Cairo) assumes a single, all-seeing executor and public contracts. The
+nearest cousin is Aleo,
 which also proves calls as separate transitions bound into a
 transaction — and where, as [Equilibrium's deep
 dive](https://equilibrium.co/writing/privacy-blockchains-and-aleo-deep-dive)

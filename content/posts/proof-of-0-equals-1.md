@@ -7,10 +7,11 @@ description = "Two syntax-tree nodes in Polygon Miden hashed to the same value, 
 A zero-knowledge VM makes one promise to a verifier: *I ran the program
 whose hash is H, on this input, and got this output, and here is a
 proof you can check without re-running anything.* The whole edifice
-rests on that hash pinning down exactly one program. In December 2022
-I built a Miden Assembly program that outputs a stack of zeros,
-together with a valid proof that it outputs a one. Same hash, both
-true. A proof that 0 = 1.
+rests on it being computationally infeasible to find a different
+program with the same hash. In December 2022 I built a Miden Assembly
+program that outputs a stack of zeros, together with a valid proof that
+the same hash identifies a program outputting one. Both claims verify.
+A proof that 0 = 1.
 
 I should say up front what my contribution was and was not. The Miden
 team already knew the underlying weakness. It was written down, in a
@@ -154,16 +155,17 @@ element when hashing a control block, composed from the block's opcode
 bits.
 
 I still find the affine mixer the prettier answer, for a reason that
-outlives this particular bug. If your hash is collision-resistant, it
-already sends linearly-adjusted inputs to unrelated outputs, so a
-distinct multiplier per node type gives you a distinct domain, and you
-can keep minting them: a fresh nonzero multiplier for every new node
-type you ever add, unboundedly many, at the price of one multiply and
-add and no state at all. Domain separation by capacity register spends a scarce
-resource, the sponge state that is also your security margin, and caps
-the number of domains at the bits you are willing to give up. One
-technique scales with the algebra of the hash; the other rations a
-fixed budget.
+outlives this particular bug. If your hash makes it infeasible to find
+attainable digests at a chosen affine relation, linearly adjusted inputs
+behave like unrelated inputs, so a distinct multiplier per node type
+gives you a large practical namespace at the price of one multiply and
+add and no extra state. A capacity register works differently, but it
+does not spend a bit or a field element for each domain: every node type
+can share one register and select a different tag value. Its namespace
+is limited by the tag encoding, not by a security budget consumed one
+domain at a time. The real trade-off is whether dedicating that part of
+the sponge state to a tag leaves enough capacity for the target security
+level; for RPO, the analysis said that it did.
 
 That said, I will not fault Miden's choice, and I might not be weighing
 every trade-off they were. Once RPO handed them a free register, domain
@@ -189,10 +191,10 @@ proof systems, and it is why they reward a particular habit: stop
 reading the source language and start reading the object the source
 compiles to, the thing the proof actually talks about. The MASM
 programmer cannot write the malicious tree. The person holding the
-MAST can. A zero-knowledge proof is only as honest as the
-injectivity of the map from programs to hashes, and that map is easy
-to build with an accidental collision hiding in it, even, as here,
-one the authors had already flagged.
+MAST can. A zero-knowledge proof is only as honest as the computational
+binding between a program and its hash. An ambiguous tree encoding can
+break that binding with a structural collision hiding in it, even, as
+here, one the authors had already flagged.
 
 None of this is a knock on Miden. Writing down "this is not yet safe"
 in the code is exactly what a careful team does with a known gap, and

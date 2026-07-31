@@ -97,11 +97,16 @@ own framework.
 ## What it turned into
 
 That review is the hinge of the whole thing. "What does your testing
-show" sent me to build the tests properly, inside ktest: a torture
-matrix that uses `dm-delay` to simulate slow HDDs and deliberately
-drives the reconcile thread into lock contention under heavy swap
-pressure. Which is how I could then do the thing I actually wanted:
-make **swap files work on bcachefs**.
+show" sent me to build the tests properly, inside ktest. I used
+`dm-delay` to reproduce the slow-HDD reconcile contention, then built a
+separate, calibrated swap-pressure suite: repeated rounds near full swap
+utilisation, swapoff under pressure, no-swap controls, and ablations of
+the proposed safeguards. The small [upstream smoke
+test](https://github.com/koverstreet/ktest/pull/63) is only the basic
+reclaim-pressure case; the [fuller stress
+suite](https://github.com/koverstreet/ktest/pull/98) contains the tests
+behind the swap analysis. Which is how I could then do the thing I
+actually wanted: make **swap files work on bcachefs**.
 
 Swap on a copy-on-write filesystem is a funny problem. The kernel used
 to reject a swapfile on bcachefs outright, complaining about "holes,"
@@ -113,22 +118,29 @@ sillier than any of that: my new module was being shadowed by the stock
 `bcachefs.ko` that the initramfs loaded first. `mkinitcpio -P` and a
 reboot.)
 
-The deep part was making it stable under real memory pressure, and it's
-the same lesson as the `ls` hang wearing a different hat: you cannot let
-an allocation, made while holding filesystem locks, trigger reclaim that
-writes a swap page *back into the very filesystem you're allocating btree
-nodes for*. That's a circular wait dressed up as memory management. The
-fix is a careful audit of allocation flags (`GFP_NOFS` and `NOIO`
-instead of `GFP_KERNEL`), plus armour inside the swap path itself —
-`memalloc_noreclaim_save()` around the swap I/O, pinned btree nodes, and
-a pre-reserved btree cache — so reclaim can never close the loop. With
-it, swap runs under maximum exhaustion without wedging. The patches are
-up for review as [swap file support via
-SWP_FS_OPS](https://github.com/koverstreet/bcachefs-tools/pull/646) and
-[swapfile reclaim-pressure
-tests](https://github.com/koverstreet/ktest/pull/63), posted by Darafei
-Praliaskouski (Komzpa), who drove the upstreaming; the sign-offs carry
-us both.
+The deep part was making it stable under real memory pressure. Swap I/O
+is itself invoked by reclaim, so it has to reach the storage path without
+recursively entering reclaim and waiting on the filesystem resources it
+needs to make progress. My historically tested branch was deliberately
+armoured: `memalloc_noreclaim_save()` around swap I/O, bkey-buffer and
+disk preallocation, pinned btree nodes, and, in an earlier version, a
+pre-reserved btree cache. One correction matters here: `GFP_NOFS` is
+already sufficient to stop reclaim writing an `SWP_FS_OPS` swap page
+back into the same filesystem; a blanket `NOIO` requirement was an
+overstatement.
+
+The ablations also made the story narrower. Removing the `PF_MEMALLOC`
+propagation alone reproduced the stalls and deadlocks; this test did not
+show a measurable benefit from pinning or the cache reserve. The
+[armoured discussion branch](https://github.com/koverstreet/bcachefs-tools/pull/787)
+preserves that history and the remaining mechanisms, although its stress
+results were measured before the latest rebase. The [current reduced
+proposal](https://github.com/koverstreet/bcachefs-tools/pull/646), posted
+by Darafei Praliaskouski (Komzpa), deliberately strips out the
+swap-specific memory machinery and keeps `bch2_swap_rw()` as a thin
+direct-I/O dispatch path. It has build validation, but the maximum-
+exhaustion result belongs to the historical armoured implementation, not
+to that reduced head. The sign-offs carry us both.
 
 All of this happened next to a third thread: online filesystem
 shrinking, a long-requested feature that another developer, jullanggit,

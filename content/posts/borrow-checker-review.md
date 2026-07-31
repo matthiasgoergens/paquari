@@ -34,17 +34,20 @@ is trying to free memory. Every filesystem knows this shape and guards
 against it: allocate with `GFP_NOFS`, or run under a `PF_MEMALLOC_NOFS`
 scope, and reclaim won't re-enter the filesystem.
 
-Swap doesn't fully respect that guard. Swap writeout from reclaim is
-gated by `__GFP_IO`, not `__GFP_FS` — but the mm has known how to
-special-case this since 2022: [NeilBrown's
+Swap once made that guard subtler because swap writeout from reclaim is
+primarily gated by `__GFP_IO`, not `__GFP_FS`. But the mm has known how
+to handle filesystem-backed swap since 2022: [NeilBrown's
 d791ea676b66](https://github.com/torvalds/linux/commit/d791ea676b66)
 ("mm: reclaim mustn't enter FS for SWP_FS_OPS swap-space", v5.19) makes
 reclaim refuse to enter the filesystem for a swap-cache folio under
 `__GFP_IO` alone when the swap space goes through filesystem operations,
-which is exactly how swap on bcachefs works. So `PF_MEMALLOC_NOFS` does
-close the ordinary swap-writeout path. What it cannot close is the
-`GFP_KERNEL` path: with both `__GFP_FS` and `__GFP_IO` set, reclaim is
-free to write a swap page straight back into the filesystem that is
+which is exactly how swap on bcachefs works. An explicit `GFP_NOFS`
+allocation or an active `PF_MEMALLOC_NOFS` scope strips `__GFP_FS`, so
+it does close this swap-writeout path.
+
+The observed allocation had neither protection. Its unscoped
+`GFP_KERNEL` retained both `__GFP_FS` and `__GFP_IO`, leaving reclaim
+free to write a swap page straight back into the filesystem that was
 trying to free memory. This deadlocks:
 
 ```
@@ -56,14 +59,16 @@ reconcile thread
 journal write: blocked on the write-buffer lock
 ```
 
-A `GFP_KERNEL` allocation, held under a lock the journal needs, on a
-filesystem that happens to host swap. The fix is one word: `GFP_NOIO`
+An unscoped `GFP_KERNEL` allocation, held under a lock the journal
+needs, on a filesystem that happens to host swap. The fix is one word: `GFP_NOIO`
 instead of `GFP_KERNEL`, which forbids reclaim from starting I/O and so
-cannot recurse into swap. (`GFP_NOFS` would also have blocked this
-particular recursion, thanks to the SWP_FS_OPS carve-out above; `NOIO`
-is the conservative choice — it also covers swap-slot allocation and any
-swap path the mm doesn't special-case.) The hard part isn't the fix,
-it's *finding
+cannot recurse into swap. `GFP_NOFS` would also have blocked this
+particular recursion; the patch chose `NOIO` as the stronger, simpler
+invariant for every allocation under the write-buffer locks: do not
+start reclaim I/O there at all. It also upgraded an existing NOFS scope
+to NOIO. That upgrade was not needed for the documented SWP_FS_OPS
+recursion, but it makes the invariant uniform. The hard part isn't the
+fix, it's *finding
 every site*: every allocation that runs under a lock the write or journal
 path can wait on, across the allocation.
 
@@ -102,13 +107,24 @@ matching or any "make illegal states unrepresentable" trick, because the
 illegal state here isn't a value you can rule out of the type, it's time.
 
 Here's the turn, and it's the one that belongs on this blog. The tool
-that *does* reach this bug is the proof assistant. Verus (the same one
-bcachefs is already using to prove its search trees) supports `decreases`
-clauses: you name a measure that must strictly decrease on every
-iteration, and it proves the loop terminates. Reconcile as a fixpoint
-with a well-founded "work remaining" measure is precisely a `decreases`
-obligation. Written that way, the bug isn't a live-lock in production;
-it's a proof you cannot discharge, at compile time.
+that *can* reach this bug is the proof assistant, but not through a bare
+termination check on the worker loop: each pass already terminates. The
+useful obligation is on the state transition. Under quiescence, every
+successful terminal dedup attempt must either convert or index the
+extent, or clear its `dedup_pending` flag; only an explicitly transient
+outcome may leave it pending for a retry. The buggy byte-mismatch path
+returned success while preserving the flag, violating that postcondition.
+
+That contract matches the repair. Six terminal cases — no usable
+checksum, compressed data, size mismatch, a hit on the extent itself, a
+source-checksum mismatch, and a byte mismatch — now pass through
+`dedup_skip_terminal()`, which re-peeks the current key, clears the flag,
+and commits. I/O errors, transaction restarts, and data changing while
+the locks are dropped deliberately retain it. Once the local contract is
+proved, a quiescent reconcile-to-fixpoint driver over a finite set of
+pending extents really can use "work remaining" as a `decreases` measure.
+The liveness proof needs both pieces; the bug would make the first one
+fail at compile time.
 
 ## Three rungs
 
@@ -118,8 +134,9 @@ So two bugs, two reviewers, and neither is the borrow checker:
   and the smallest slice of a filesystem's bugs.
 - **Allocation context / effects**: an effect discipline you build by
   hand. Rust can carry it; nothing hands it to you.
-- **Liveness and termination**: a proof assistant with a `decreases`
-  clause. The one rung tall enough to see the loop that never ends.
+- **Liveness and progress**: a proof assistant with state-transition
+  postconditions and, under quiescence, a `decreases` measure. The one
+  rung tall enough to see the work item that never retires.
 
 "Let the compiler review your code" is still the right instinct: I
 wouldn't have built [a shrink engine around a mode
@@ -130,6 +147,7 @@ were one and two rungs above it.
 Which is why I find bcachefs's Rust-*and*-Verus direction more
 interesting than a plain rewrite. Safe Rust would close the memory-safety
 class outright. But the project is also proving things with Verus, and
-that is the rung that reaches the liveness bug the borrow checker never
-could. The reviewers stack. You just have to know which one you're
-asking, and for a filesystem the answer is rarely the cheap one.
+that is the rung that can express the progress contract this bug
+violated and the conditional termination argument above it. The
+reviewers stack. You just have to know which one you're asking, and for
+a filesystem the answer is rarely the cheap one.

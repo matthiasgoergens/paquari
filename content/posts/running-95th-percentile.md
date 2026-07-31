@@ -41,9 +41,10 @@ concentrates. Expected space Θ̃(√n), expected total time Θ(n): two
 comparisons per element for almost everything, since only a Θ̃(1/√n)
 fraction of the stream ever lands inside the window.
 
-And Ω(√n) is necessary, even if you only cared about the *final*
-answer: each of the Θ(√n) elements straddling the boundary is the exact
-answer with probability Θ(1/√n), so nearly all of them must be stored.
+And one cannot beat √n space by a polynomial factor, even if one only
+cared about the *final* answer. The intuition is that each of the
+Θ(√n) elements straddling the boundary is the exact answer with
+probability Θ(1/√n), so nearly all of them must be stored.
 [Guha and McGregor](https://doi.org/10.1007/978-3-540-73420-8_61)
 (ICALP 2007) proved the formal version: one pass over a random-order
 stream needs n^{1/2−o(1)} space to pin down the median even
@@ -156,9 +157,9 @@ Paterson](https://www.sciencedirect.com/science/article/pii/0304397580900614)
 started it; Guha and McGregor mapped out random-order quantiles
 ([PODS 2006](https://doi.org/10.1145/1142351.1142390), [ICALP
 2007](https://doi.org/10.1007/978-3-540-73420-8_61), [SICOMP
-2009](https://doi.org/10.1137/07069328X)) including the one-pass Ω(√n)
-lower bound and exact selection with polylog space in O(log log n)
-passes; [Chakrabarti, Jayram and
+2009](https://doi.org/10.1137/07069328X)) including the one-pass
+n^{1/2−o(1)} lower bound and exact selection with polylog space in
+O(log log n) passes; [Chakrabarti, Jayram and
 Pătraşcu](https://www.cs.dartmouth.edu/~ac/Pubs/soda08-median-ds.pdf)
 (SODA 2008) matched the pass count from below, together resolving Munro
 and Paterson's open question. A fuller write-up with all
