@@ -102,9 +102,9 @@ it got tired.
 
 The whole satisfaction above was the *certificate* — not just a long chain, but a
 proof that nothing longer exists. So I couldn't resist asking what happens on a
-bigger list. ITA's 6561 titles came from MovieLens, and MovieLens today ships
-about ten times as many; after normalising I had 57,130 titles. Same CP-SAT model,
-pointed at the bigger graph.
+bigger list. ITA's 6561 titles came from MovieLens. I used the MovieLens 25M
+dataset; after normalising its 62,423 rows, 57,130 titles remained. Same CP-SAT
+model, pointed at the bigger graph.
 
 The chain grew to **4,087 titles** — thirteen times the 310 — and every overlap
 verifies. But here is the honest part: it is *not* optimal, and I cannot tell you
