@@ -149,13 +149,18 @@ building a coverage-guided fuzzer on top of these generators, too.
 
 ## The OxCaml part
 
-The engine builds and runs under OxCaml (the 5.2.0+ox overlay, Base
-and ppxlib at v0.18 preview) with a handful of compatibility shims in
-my vendored copies, none in the engine. A determinism check — 200
-find-and-shrink cycles of the bind-heavy property above — gives
-byte-identical results on both compilers, down to the same 10129
-total shrink attempts. For a testing tool, determinism across
-compiler forks is a feature worth stating.
+The engine builds and runs under OxCaml (the 5.2.0+ox overlay, with
+Base `v0.18~preview.130.91+190` and ppxlib `0.33.0+ox1`) with a handful
+of compatibility shims in my vendored copies, none in the engine. On
+31 July 2026 I rebuilt the same-source determinism check from tapecheck
+[`24fb1b3`](https://github.com/matthiasgoergens/tapecheck/commit/24fb1b3a5640b941317db93004da2f6c4d939a25)
+under stock OCaml 5.3.0 and OxCaml 5.2.0+ox, in separate build
+directories. Two runs under each compiler found the global minimum in
+all 200 find-and-shrink cycles and made exactly 11,098 shrink attempts.
+That is equality of the outcomes and attempt schedule for this
+benchmark, not a claim that compiler-dependent output such as timings
+is byte-identical. For a testing tool, determinism across compiler
+forks is a feature worth stating.
 
 Shrink attempts are also embarrassingly parallel: independent replays
 of edited tapes, racing to find an accepted improvement. My first
@@ -163,9 +168,10 @@ engine had exactly one piece of state in the way, a convenient global
 the shim consulted, and OxCaml's mode checker rejected it by
 inference, with a paper trail, before any parallelism existed to go
 wrong. The refactor it forced bought a 4.6x wall-clock win the same
-afternoon (and Flambda2 runs the sequential engine 12 percent faster
-while we are at it). That story, with the compiler's actual review
-comments, is [the next post](@/posts/mode-checker-review.md).
+afternoon; Flambda2 also won that day's sequential benchmark, though
+that timing is not part of the determinism claim above. That story,
+with the compiler's actual review comments, is [the next
+post](@/posts/mode-checker-review.md).
 
 ## Where this could go
 
