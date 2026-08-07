@@ -6,11 +6,12 @@ description = "Mature C projects run some sanitisers over some of their build co
 
 I have a bit of an obsession with undefined behaviour in C, and this year,
 some time on my hands due to paternity leave. So I spent a stretch of it
-doing something that required much less cleverness than it should:
-**building mature C codebases with sanitisers turned on, and running the
-test suites they already have.**
+finding easy bugs in mature C codebases — CPython, glibc, the Linux
+kernel. The method takes much less cleverness than the results suggest:
+**build the project with sanitisers turned on, and run the test suite it
+already has.**
 
-That's the whole method. No fuzzer, no formal methods, no new tests.
+That really is all of it. No fuzzer, no formal methods, no new tests.
 Mature projects have spent decades accumulating suites that exercise
 their edge cases, and the big ones do run sanitisers — some of the
 sanitisers, over some of their build configurations. I just looked for
