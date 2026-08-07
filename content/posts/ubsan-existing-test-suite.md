@@ -242,9 +242,12 @@ I deliberately picked low-hanging fruit. Whenever something proved hard —
 a fix that wanted a design discussion, a reproduction that wouldn't
 stabilise — I moved on to the next candidate. The yield looks the way it
 does partly because the hard residue got left behind, and that residue is
-still out there for someone with more patience or more context. What
-genuinely surprised me is how much low-hanging fruit there was, and is:
-I'm not done. Every finding was confirmed by a concrete reproducer on
+still out there for someone with more patience or more context. Even
+going after C undefined behaviour in the first place was partly a
+consequence of that policy rather than the other way round: I went where
+the fruit hung lowest, and UB really is as easy to harvest as this post
+makes it look. What genuinely surprised me is how much low-hanging fruit
+there was, and is: I'm not done. Every finding was confirmed by a concrete reproducer on
 unpatched upstream code before anything was sent, and the analysis errors
 were mine. Communities are working out their norms on this; LLVM, for
 instance, has a disclosure policy. The rule I'd defend anywhere: claims
