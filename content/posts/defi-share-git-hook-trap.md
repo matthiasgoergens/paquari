@@ -42,7 +42,7 @@ The chat followed a recognizable script over ~2 weeks (Jul 17 – Aug 5, 2026):
   day apart.
 - Every substantive question ("Who are the target users?", "What's the gap
   you're trying to fill?") dodged or answered with "Both of them".
-- A **~800k SGD salary expectation accepted instantly**: "Your salary range
+- A **very generous salary expectation accepted instantly**: "Your salary range
   works good for us." No interview, no technical screen, no defined role.
 - Persistent steering toward one action: review the code **before** any call
   with the "CTO":
@@ -268,7 +268,7 @@ keystores.
 | 2026-04-08 | Last legit commits; `dev` branch created |
 | 2026-07-17 | First LinkedIn contact from the recruiter persona |
 | 2026-07-21 | Malicious `post-checkout` hook added to repo |
-| 2026-07-29 | I quote 800k SGD; instantly accepted |
+| 2026-07-29 | I quote a salary expectation; instantly accepted |
 | 2026-08-05 | Hooks finalized (`post-push` added); zip created; LimeWire link sent |
 | 2026-08-05/06 | I grow suspicious ("this is all too vague"); sender insists on dev-branch review |
 | 2026-08-08 | Static analysis; trap identified; zip quarantined, never extracted |
