@@ -204,7 +204,8 @@ already public elsewhere — see the [SOCRadar Maltrail IoC report for
 2026-07-28](https://socradar.io/free-tools/ioc-radar/reports/maltrail-ioc-for-2026-07-28-55cd37a04d24)
 and [Romasiun's writeup](https://andrii.ro/blog/investigating-malware) — and
 if you have a legitimate research or defensive use for the concrete,
-unredacted details of this sample, send me an email.
+unredacted details of this sample, [send me an
+email](mailto:matthias@paquari.com).
 
 | Indicator | Value |
 |---|---|
