@@ -284,7 +284,7 @@ because this campaign targets their engineers specifically, and one hired
 | 2026-07-21 | Malicious `post-checkout` hook added to repo |
 | 2026-07-29 | I quote a salary expectation; instantly accepted |
 | 2026-08-05 | Hooks finalized (`post-push` added); zip created; LimeWire link sent |
-| 2026-08-05/06 | I grow suspicious ("this is all too vague"); sender insists on dev-branch review |
+| 2026-08-05/06 | The "plain incompetence" explanation stops holding up ("this is all too vague"); sender insists on dev-branch review |
 | 2026-08-08 | Static analysis; trap identified; zip quarantined, never extracted |
 
 ---
