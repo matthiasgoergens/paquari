@@ -220,6 +220,14 @@ and [Romasiun's writeup](https://andrii.ro/blog/investigating-malware).
 
 ### Detection / hunting ideas
 
+The IoCs above tell you what the attack looks like; this section is for
+acting on it. Two audiences: individual developers — especially anyone in
+crypto who recently received a "please review our codebase" archive from a
+recruiter — can run the first check on their own machine in seconds. And
+security teams can sweep whole fleets and telemetry for the same signs,
+because this campaign targets their engineers specifically, and one hired
+"blockchain consultant" opening a zip on a work laptop is all it takes.
+
 - Search developer machines for non-sample hooks:
   `find . -path '*/.git/hooks/*' ! -name '*.sample' -type f`.
 - Audit shell/network telemetry for `curl|wget` piping into `bash`/`sh` from
