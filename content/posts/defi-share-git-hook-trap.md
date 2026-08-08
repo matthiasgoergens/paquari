@@ -59,8 +59,7 @@ The chat followed a recognizable script over ~2 weeks (Jul 17 – Aug 5, 2026):
 Both suggested actions — checking out the `dev` branch and pushing the repo —
 are exactly the two operations that detonate the planted hooks (see below).
 
-The project was shared via a **LimeWire link**
-(`https://limewire.com/d/TT5dc#VUpamBXRXE`), not via GitHub — because
+The project was shared via a **LimeWire link**, not via GitHub — because
 `git clone` does **not** transfer hooks; the payload requires the victim to
 receive a full `.git/` directory as a file archive.
 
@@ -204,7 +203,7 @@ keystores.
 | Payload URLs | `https://iploglab.store/api/terminal/bootstrap?os={mac,linux}&flag=4`, `https://iploglab.store/api/terminal/windows?flag=4` |
 | C2 IPs | `84.32.84.115`, `88.222.222.196` |
 | Nameservers | `nebula.dns-parking.com`, `aurora.dns-parking.com` (Hostinger) |
-| Distribution URL | `https://limewire.com/d/TT5dc#VUpamBXRXE` |
+| Distribution URL | `hxxps://limewire[.]com/d/TT5dc#VUpamBXRXE` (defanged) |
 | LinkedIn persona | "Managing Partner at Eli5" (likely hijacked account; name withheld) |
 | Archive SHA-256 | `dae670d947e69574c0edfcbea65bc4ff2f4270dfcab9f708ad4888e8d28625fa` |
 | `post-checkout` hook SHA-256 | `ae837640f595bfa6c769157bfc0b895408f093431cb3865e5583c042f83373a1` |
