@@ -42,7 +42,7 @@ The chat followed a recognizable script over ~2 weeks (Jul 17 – Aug 5, 2026):
   day apart.
 - Every substantive question ("Who are the target users?", "What's the gap
   you're trying to fill?") dodged or answered with "Both of them".
-- A **very generous salary expectation accepted instantly**: "Your salary range
+- A **generous salary expectation accepted instantly**: "Your salary range
   works good for us." No interview, no technical screen, no defined role.
 - Persistent steering toward one action: review the code **before** any call
   with the "CTO":
