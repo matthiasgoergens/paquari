@@ -150,8 +150,9 @@ the git metadata layer, where code reviewers don't look.
 - The name mimics an **IP-logger/geolocation service** — matching the
   documented behavior of a sibling domain (`nnlabs.pro`), which served
   IP-geolocation info to browsers but the dropper to curl/wget.
-- Already listed on threat-intel feeds (SOCRadar Maltrail IoC report,
-  2026-07-28: "apt espionage malware", High).
+- Already listed on threat-intel feeds ([SOCRadar Maltrail IoC report,
+  2026-07-28](https://socradar.io/free-tools/ioc-radar/reports/maltrail-ioc-for-2026-07-28-55cd37a04d24):
+  "apt espionage malware", High).
 
 ## Campaign attribution: a shared kit
 
@@ -198,9 +199,12 @@ keystores.
 ## IoCs
 
 The indicators below are defanged (`hxxps://`, `[.]`) so that nothing here is
-a working link to live malware infrastructure. If you have a legitimate
-research or defensive use for the concrete, unredacted details, send me an
-email.
+a working link to live malware infrastructure. The working indicators are
+already public elsewhere — see the [SOCRadar Maltrail IoC report for
+2026-07-28](https://socradar.io/free-tools/ioc-radar/reports/maltrail-ioc-for-2026-07-28-55cd37a04d24)
+and [Romasiun's writeup](https://andrii.ro/blog/investigating-malware) — and
+if you have a legitimate research or defensive use for the concrete,
+unredacted details of this sample, send me an email.
 
 | Indicator | Value |
 |---|---|
