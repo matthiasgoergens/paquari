@@ -79,8 +79,9 @@ React/TypeScript + Node.js "DeFi trading platform" ("CoreX") with a bundled
   minified JS bundle, Hardhat/solc build artifacts, PNG assets, an elaborate
   12 KB README).
 - Git timestamps: objects date from April 2026; the hooks were modified
-  July 21 – Aug 5, 2026 — i.e., a pre-existing project was recycled and
-  weaponized later.
+  July 21 – Aug 5, 2026. That *suggests* a pre-existing project was recycled
+  and weaponized later — though committer-controlled timestamps prove nothing;
+  anyone can write a git history with arbitrary dates.
 
 The staged victim experience: unzip → browse → *every file is empty* → reflex:
 `git status` (all "modified") → `git checkout .` or `git switch dev` "to
@@ -288,6 +289,10 @@ because this campaign targets their engineers specifically, and one hired
 | 2026-08-05 | Hooks finalized (`post-push` added); zip created; LimeWire link sent |
 | 2026-08-05/06 | The "plain incompetence" explanation stops holding up ("this is all too vague"); sender insists on dev-branch review |
 | 2026-08-08 | Static analysis; trap identified; zip quarantined, never extracted |
+
+The LinkedIn-side dates are from my own chat history; the repo-side dates
+(through 2026-08-05) come from git metadata and zip entry timestamps, which
+the sender controls and could have set arbitrarily.
 
 ---
 
