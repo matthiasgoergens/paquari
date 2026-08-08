@@ -197,19 +197,24 @@ keystores.
 
 ## IoCs
 
+The indicators below are defanged (`hxxps://`, `[.]`) so that nothing here is
+a working link to live malware infrastructure. If you have a legitimate
+research or defensive use for the concrete, unredacted details, send me an
+email.
+
 | Indicator | Value |
 |---|---|
-| C2 domain | `iploglab.store` |
-| Payload URLs | `https://iploglab.store/api/terminal/bootstrap?os={mac,linux}&flag=4`, `https://iploglab.store/api/terminal/windows?flag=4` |
-| C2 IPs | `84.32.84.115`, `88.222.222.196` |
-| Nameservers | `nebula.dns-parking.com`, `aurora.dns-parking.com` (Hostinger) |
+| C2 domain | `iploglab[.]store` (defanged) |
+| Payload URLs | `hxxps://iploglab[.]store/api/terminal/bootstrap?os={mac,linux}&flag=4`, `hxxps://iploglab[.]store/api/terminal/windows?flag=4` (defanged) |
+| C2 IPs | `84.32.84[.]115`, `88.222.222[.]196` (defanged) |
+| Nameservers | `nebula[.]dns-parking[.]com`, `aurora[.]dns-parking[.]com` (Hostinger, defanged) |
 | Distribution URL | `hxxps://limewire[.]com/d/TT5dc#VUpamBXRXE` (defanged) |
 | LinkedIn persona | "Managing Partner at Eli5" (likely hijacked account; name withheld) |
 | Archive SHA-256 | `dae670d947e69574c0edfcbea65bc4ff2f4270dfcab9f708ad4888e8d28625fa` |
 | `post-checkout` hook SHA-256 | `ae837640f595bfa6c769157bfc0b895408f093431cb3865e5583c042f83373a1` |
 | `post-push` hook SHA-256 | `ae837640f595bfa6c769157bfc0b895408f093431cb3865e5583c042f83373a1` (identical) |
 | Repo refs | `main = a2146745569c812c96d7f9c7a819e2b92311b7f9`, `dev = 22afc99e1055daa1e29a4d82cec3c79f545452c7` |
-| Related IoCs (documented campaign) | `nnlabs.pro`, payload host `jsonkeeper.com`, backend `216.126.225.243:8085/8086/8087` (per Romasiun) |
+| Related IoCs (documented campaign) | `nnlabs[.]pro`, payload host `jsonkeeper[.]com`, backend `216.126.225[.]243:8085/8086/8087` (per Romasiun; defanged) |
 
 ### Detection / hunting ideas
 
