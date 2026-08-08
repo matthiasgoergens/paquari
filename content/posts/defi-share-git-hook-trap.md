@@ -247,7 +247,7 @@ because this campaign targets their engineers specifically, and one hired
 2. **The lure passes competence-skepticism.** The persona reads as a
    *clueless, harmless* founder — an abundant real species. The visible layer
    (a "free work" grift) fully explains everything seen, and a target who
-   "spots" that layer still opens the zip. Only intent-skepticism — "what
+   "spots" that layer might still open the zip. Only intent-skepticism — "what
    action am I being steered toward?" — separates the two.
 3. **The channel launders trust.** Hooks can't travel via `git clone`, so the
    payload *requires* an out-of-band archive — which the recruiter frame makes
