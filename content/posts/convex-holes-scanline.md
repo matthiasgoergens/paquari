@@ -1,5 +1,5 @@
 +++
-title = "The scanline that couldn't share"
+title = "Scanning for convex holes"
 date = 2026-08-17
 draft = true
 description = "I revived my 2010 Haskell solution to Project Euler 252 to find out why it was slow. It was slow because it was wrong, wrong because of one word, and slower than the standard approach for a reason worth measuring: its search states genuinely cannot be merged. Plus a Lean port, and a machine-checked proof of the lemma I kept getting almost wrong."
