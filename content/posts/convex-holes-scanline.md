@@ -44,7 +44,7 @@ wrong "best" that is 65% too large sounds like it should prune *more*,
 and at n=500 it did — the buggy version was fast there, for the wrong
 reason. But at n=300 the bug produced a *differently* wrong best that
 mis-steered the search into 32 seconds of work the fixed version does
-in 1.7. If your branch-and-bound has inexplicable performance cliffs,
+in 1.7 seconds. If your branch-and-bound has inexplicable performance cliffs,
 check whether it is also wrong. The two travel together, because the
 same quantity — the incumbent best — drives both the answer and the
 pruning.
@@ -77,7 +77,7 @@ search states that agree on the five-tuple, keeping the best area.
 This is how dynamic programming is born.
 
 Measured: merging removes **3.1%** of the states. Ninety-seven percent
-of the 80 million surviving states are unique, because the constraints
+of the 80 million surviving states (this is at n=500) are unique, because the constraints
 remember history — every excluded point tightened a cone through that
 particular point — and the two chains' constraints multiply.
 
@@ -90,7 +90,10 @@ two integer sign tests, and each bucket of states becomes a
 three-dimensional Pareto frontier. I implemented it, verified it
 still produces correct answers at every size, and measured it.
 
-It removes 3.1%. The same 3.1%. Dominance bought essentially nothing
+It removes 3.1%. The same 3.1%. And both experiments charge rent for
+the privilege: the bucket bookkeeping needed to *look* for merges made
+them 25–30× slower than the plain scanline they were meant to
+accelerate. Sharing lost twice. Dominance bought essentially nothing
 beyond deduplication, and the reason is the interesting part: a state
 with a wider cone almost always paid for it with less accumulated
 area. The trade-off is real, so the frontier states are genuinely
@@ -146,16 +149,19 @@ docstring.
 Fifty-six minutes later it returned a proof. I re-checked it locally
 the paranoid way: the theorem statement is byte-identical to the one I
 submitted, the project builds, there is no `sorry`, and
-`#print axioms` reports only the three standard Lean axioms. The
+`#print axioms` reports `propext`, `Classical.choice`, `Quot.sound` —
+the three classical axioms every ordinary Mathlib proof rests on, and
+nothing else: no leftover `sorry` smuggled in as an axiom, no custom
+assumptions. The
 proof follows the sketch — barycentric expansion of the cross product
 for one direction, a least-index wedge argument for the other — and
-the collinear case, the one I mistrusted most, gets its own honest
+the collinear case, the one I mistrusted most, gets its own explicit
 branch. The lemma now compiles, sorry-free, against current Mathlib.
 
 ## Coda: Lean as a systems language
 
 Since the spec was in Lean anyway, I ported the fan DP itself —
-mutable arrays inside `Id.run do`, `Int64` arithmetic — and compiled
+mutable arrays in Lean's imperative do-notation, `Int64` arithmetic — and compiled
 it natively. Same answers at every size. The numbers for n=500:
 
 | implementation | time |
@@ -176,4 +182,5 @@ is a combination I did not have in 2010.
 
 The remaining gap, for a future post: proving the DP itself correct
 against the spec — the fan lemma was the hard geometric core, but the
-induction connecting `dp[i][j]` to "maximum hole" is still on paper.
+induction connecting the DP table to "maximum hole" is still on
+paper.
