@@ -108,8 +108,10 @@ the polygon at its lexicographically smallest vertex
 and decomposes it into the fan of triangles from that anchor.
 Emptiness of the polygon is then *per fan triangle*, because
 consecutive fan vertices are consecutive polygon vertices, so each
-fan chord is a polygon edge. A joint property of the whole polygon
-becomes a local property of each edge, and the DP state collapses to
+fan chord is a polygon edge. (Almost — the points on the fan's own
+internal diagonals escape every triangle; that is the first trap
+below.) A joint property of the whole polygon becomes a local
+property of each edge, and the DP state collapses to
 "the last edge": every chain history ending in the same edge merges,
 by construction. That is the sharing the scanline could not have, and
 it is why the same computation drops from 1.9 seconds to 0.37, with an
