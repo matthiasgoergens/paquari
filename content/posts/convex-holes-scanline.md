@@ -114,13 +114,19 @@ below.) A joint property of the whole polygon becomes a local
 property of each edge, and the DP state collapses to
 "the last edge": every chain history ending in the same edge merges,
 by construction. That is the sharing the scanline could not have, and
-it is why the same computation drops from 1.9 seconds to 0.37, with an
-O(n³) guarantee in place of data-dependent pruning.
+it is why the same computation drops from 1.9 seconds to 0.37, with a
+polynomial worst case in place of data-dependent pruning. (The
+textbook version of this DP is O(n³); my implementation keeps a naive
+emptiness scan and concedes a factor of n in the worst case, but a
+polynomial worst case is a different beast from a branch-and-bound
+that an adversarial input can drive exponential.)
 
 Two facts fall out free of charge, which I had not appreciated before
 writing it down: convexity at the anchor *and* at the closing vertex
-are automatic consequences of processing candidates in angular order.
-The DP only needs to enforce left turns along the chain.
+are automatic consequences of processing candidates in angular order,
+with ties on a shared ray broken nearest-first — drop that tie-break
+and a farther-first ordering makes the closing turn collinear. The DP
+only needs to enforce left turns along the chain.
 
 ## The two traps, and a machine-checked apology
 
