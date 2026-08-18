@@ -323,7 +323,7 @@ measuring to `/dev/null`, and Linus Torvalds saying zero-copy "has
 seldom really been a huge advantage in practice outside of benchmarks"
 is talking about the socket row. Both are looking at real numbers.
 
-I had been quoting the `/dev/null` row all week.
+I had been quoting the `/dev/null` row throughout.
 
 ## The twist: they are removing it
 
@@ -385,10 +385,11 @@ kernel at all — they were about my harness. Ring capacity mattered
 because my producer and consumer were separate processes. Zero-copy
 looked like an 18× win because my destination was `/dev/null`. Both are
 properties of the measurement, and I attributed both to the code. The
-tell, in hindsight, is that I never varied them: the folio size, the
-patch, the pipe size all got swept, while "two processes" and "discard
-the output" sat fixed for a week as though they were the laws of
-physics.
+tell, in hindsight, is that I never varied them: over two days the folio
+size, the patch and the pipe size all got swept, some of them across
+sixty-four randomised kernel builds, while "two processes" and "discard
+the output" never moved once — not because I had decided they were
+fixed, but because I had never noticed they were choices.
 
 The patch is not upstream and now probably never will be, at least in
 the form I wrote it. That is a fine outcome. The finding underneath it
