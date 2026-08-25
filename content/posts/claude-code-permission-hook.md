@@ -249,14 +249,13 @@ the hook handles the structural cases, the built-in allowlist remembers the
 specific one-off approvals.
 
 Those 23,172 auto-allows are prompts I didn't see and didn't rubber-stamp.
-That's the point. The prompts I do see now are `sudo`, `git
+The prompts I do see now are `sudo`, `git
 push`, `rm -rf`, package installs, and commands weird enough that a parser
 refused to guess. Those I actually read.
 
-## A hook can teach, not just gate
+## Teaching command habits
 
-The `deny` verdict turned out to be the most interesting one, because the
-model reads the denial reason and reacts to it. Those 658 denials are almost
+The model reads a `deny` verdict's reason and reacts to it. Those 658 denials are almost
 all one rule that has nothing to do with safety:
 
 ```python
@@ -275,7 +274,7 @@ is fine. It is a style rule enforced mechanically: a `CLAUDE.md`
 instruction saying the same thing gets weighed against the model's
 judgement; a deny doesn't.
 
-## What this is not
+## Threat model
 
 The hook is not a security boundary, and I want to be precise about the
 threat model, because the HN thread mixes two different problems.
@@ -306,20 +305,19 @@ the sandbox solve different problems, and you can run both.
 
 ## An open problem: judgement calls
 
-Between the two clean cases — commands a parser can classify, and malice
-only a sandbox can contain — sits a third class I don't have a good answer
-for: actions whose safety is a judgement call about content and context, not
-about command shape.
+I do not have a good answer for actions whose safety depends on content and
+context rather than command shape. A parser cannot classify them, while a
+sandbox does not decide whether they are appropriate.
 
-Outbound messages are the canonical example. Back when I was on Slack, I
+Outbound messages show the problem. Back when I was on Slack, I
 wanted Claude to be able to send *some* messages — posting a build result to
 my own channel is fine — but not others, and "which others" is not a
 predicate I can write in Python. A parser can see that a call sends a
 message; it cannot see that this particular message is a bad idea. And
 unlike nearly everything else in this post, a sent message is unrecoverable:
 I have backups against `rm` and the reflog against `git reset`, but there
-is no reflog for a dumb message to your boss. The actions where a structural check helps
-least are exactly the ones you can't undo.
+is no reflog for a dumb message to your boss. Structural checks are weakest
+where mistakes are hardest to undo.
 
 I'm off Slack now, but the same class is live in my setup today: `gh` is on
 my always-allow list because I read PRs and issues with it constantly — and
@@ -335,26 +333,23 @@ asking the proposer to judge its own proposal buys you correlated failures —
 but a different family, codex or DeepSeek, with a narrow question: here is
 the message and its context; should a human see this first?
 
-This shape isn't hypothetical. One commenter in the thread (prtmnth) ran
-it before auto mode existed: a script that ran before every permission
-request, asked Haiku for a safe/unsafe verdict, and logged the answers. Auto mode is the built-in
-version of the same idea, and its classifier is now free. What I'd want is
-the layered combination: the parser keeps answering the structural
-majority deterministically, and a classifier only ever sees the
+One commenter in the thread (prtmnth) ran this before auto mode existed: a
+script that ran before every permission request, asked Haiku for a safe/unsafe
+verdict, and logged the answers. Auto mode is the built-in version of the same
+idea, and its classifier is now free. I would keep the parser for the structural
+majority and send only the
 fall-through band — the judgement calls and the genuinely weird — with a
 human prompt when the classifier is negative or unsure. The cross-family
 version appeals to me over a same-family one because two families are less
 likely to fail the same way, and because the verdicts would land in the
-same log as every other decision, where I can audit them. I haven't built it. For now the
-honest description of my outbound-message policy is: instructions, plus
-paying attention.
+same log as every other decision, where I can audit them. I haven't built it.
+For now my outbound-message policy is instructions plus paying attention.
 
-## What's left
+## Result
 
-What the hook solves is the problem the 97% number describes: a prompt
-stream so dense with obviously-fine commands that approval becomes a reflex,
-at which point the prompts protect nothing. Anthropic's fix is a classifier
-model watching the command stream. Mine is a parser — deterministic,
+The 97% figure describes the problem the hook solves: a prompt stream so dense
+with obviously-fine commands that approval becomes a reflex. Anthropic's fix is
+a classifier model watching the command stream. Mine is a parser — deterministic,
 auditable via the log, as fast as any small local script (milliseconds,
 against a server round trip for a classifier), and wrong in ways I can read
 in the source rather than ways I have to discover empirically. For the residue that

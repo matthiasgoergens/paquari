@@ -77,8 +77,9 @@ read: "present since the initial release 0.1.0." Version 0.1.0 is dated July
 2014 — nearly twelve years.
 
 In practice Lwt catches the exception at the monad boundary and kills only the
-connection, not the whole unikernel. Still: five bytes, no authentication,
-nearly twelve years.
+connection, not the whole unikernel. An unauthenticated five-byte record could
+therefore terminate a connection in every affected release for nearly twelve
+years.
 
 ### Memory exhaustion through unbounded fragments
 
@@ -146,10 +147,10 @@ its own — with a TCP relay, and the handshake completes. The secret flows in
 both directions as encrypted application data. The same trick works through
 the port 10001 callback by relaying port 40001 back to port 10000.
 
-This is not a bug — the web page invites you to "enjoy watching it do so" —
-and the relay operator sees only ciphertext. The maintainers' retrospective
+Although the web page invites you to "enjoy watching it do so" and the relay
+operator sees only ciphertext, the maintainers' retrospective
 describes the same observation: "we can observe the encrypted private key in
-transit." But it is a reminder that the Piñata's security is one-deep: every
+transit." The relay demonstrates that the Piñata's security is one-deep: every
 endpoint trusts the same CA, so a compromise anywhere breaks the system.
 
 ## What I did not find
@@ -210,25 +211,24 @@ printf '\x14\x03\x03\x00\x00' | nc 127.0.0.1 443
 The connection dies. The unikernel stays up. Five bytes, no authentication,
 nearly twelve years.
 
-## What this says about the stack
+## Audit result
 
 The `mirleft/ocaml-tls` authors set out to build a TLS stack that was "not
 quite so broken." The Piñata was their public bet that they had succeeded.
-After a source-level audit — hypothesis generation by two model families,
-every finding checked against the code by me — and empirical verification of
-each concrete reproducer, the core result holds: I found no chain-validation
-bypass and no certificate-verify bypass in the pinned TLS and X.509 code.
+After checking both models' hypotheses against the source and reproducing each
+concrete finding, I found no chain-validation or CertificateVerify bypass in
+the pinned TLS and X.509 code.
 
-The bugs that *were* found are real — a crash bug present since the initial
-release, an exponential DoS still in current upstream, a missing-purpose-check
-that shipped as a CVE — and they matter. But they sit at the perimeter. The
-mutual-TLS handshake does what it says on the tin.
+The audit did find a crash bug present since the initial release, an
+exponential DoS still in current upstream, and a missing-purpose-check that
+shipped as a CVE, but none bypassed the mutual-TLS authentication protecting
+the key.
 
 For a roughly 5,000-line TLS library written in a memory-safe language by a
-small team, that is a remarkable result. The Piñata's stack was not formally
-verified, but it was *audited* — adversarially, against a concrete security
-goal with a known bounty — and it held up.
+small team, that is a remarkable result. This was an empirical adversarial
+audit rather than a formal verification; against the concrete goal of bypassing
+client authentication, the stack held up.
 
-The 10 BTC are gone, withdrawn by the owners in 2018. But the question the
-Piñata asked — can you build a TLS stack that is not quite so broken? — got a
-better answer in 2026 than it had in 2018.
+The owners withdrew the 10 BTC in 2018. This 2026 audit provides stronger
+evidence that the pinned stack resisted the authentication bypass the challenge
+invited.

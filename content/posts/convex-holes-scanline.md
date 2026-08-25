@@ -67,14 +67,13 @@ worth 2.8×). The standard approach people use — I'll get to it — runs
 in 0.37 seconds and carries a worst-case guarantee. So: is the
 scanline *idea* slow?
 
-## Two negative results, honestly measured
+## Two failed attempts to share states
 
-The first thing I noticed when trying to speed it up: the sweep never
-looks *inside* the chains. Its future depends only on the chain heads,
+The sweep never looks *inside* the chains. Its future depends only on the chain
+heads,
 the two constraints, and the accumulated area — a five-component
-tuple. The chains are dead weight. That immediately suggests sharing: merge
+tuple. The chains are dead weight. That suggests a dynamic programme: merge
 search states that agree on the five-tuple, keeping the best area.
-This is how dynamic programming is born.
 
 Measured: merging removes **3.1%** of the states. Ninety-seven percent
 of the 80 million surviving states (this is at n=500) are unique, because the constraints
@@ -94,12 +93,10 @@ It removes 3.1%. The same 3.1%. And both experiments charge rent for
 the privilege: the bucket bookkeeping needed to *look* for merges made
 them 25–30× slower than the plain scanline they were meant to
 accelerate. Sharing lost twice. Dominance bought essentially nothing
-beyond deduplication, and the reason is the interesting part: a state
-with a wider cone almost always paid for it with less accumulated
-area. The trade-off is real, so the frontier states are genuinely
-incomparable — each one carries information the others lack. No
-merging discipline fixes that. The representation itself resists
-sharing, and that, not constants, is why the scanline loses.
+beyond deduplication because a state with a wider cone almost always
+paid for it with less accumulated area. The resulting frontier states
+are genuinely incomparable: each carries information the others lack.
+The scanline's problem is its representation rather than its constants.
 
 ## The representation that shares
 
@@ -166,7 +163,7 @@ for one direction, a least-index wedge argument for the other — and
 the collinear case, the one I mistrusted most, gets its own explicit
 branch. The lemma now compiles, sorry-free, against current Mathlib.
 
-## Coda: Lean as a systems language
+## The Lean implementation
 
 Since the spec was in Lean anyway, I ported the fan DP itself —
 mutable arrays in Lean's imperative do-notation, `Int64` arithmetic — and compiled

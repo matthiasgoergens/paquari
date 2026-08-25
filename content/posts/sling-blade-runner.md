@@ -34,7 +34,7 @@ backbone. That gave **232 titles**, and it reads beautifully as one run-on
 sentence: `THE GOSPEL OF JOHN Q AND A PERFECT MURDER AND MURDER IN THE FIRST BLOOD
 DIAMOND MEN CRY BULLETS OVER BROADWAY…`.
 
-## The part where I was wrong
+## Multi-word overlaps
 
 The puzzle explicitly allows *multi-word* overlaps: `License to Kill` +
 `To Kill a Mockingbird` = `License to Kill a Mockingbird`, joined on two words.
@@ -79,14 +79,12 @@ around 150 seconds where CP-SAT's specialised circuit propagator takes 0.2, a
 fair reminder that the right constraint beats a generic formulation of the same
 problem.
 
-## What I actually learned
+## A local optimum is not a ceiling
 
-The uncomfortable part is not that my heuristic was suboptimal. Heuristics are
-supposed to be. It is that it was suboptimal *and confident*, and I wrote its
-confidence down as a fact about the problem. A local optimum doesn't announce
-itself as one; it feels exactly like a ceiling. My "multi-word overlaps barely
-help" was not a measurement — it was the shape of the basin my particular search
-happened to fall into, dressed up as a law.
+My worse error was treating the heuristic's confidence as evidence about the
+problem. A local optimum doesn't announce itself as one; it feels exactly like
+a ceiling. "Multi-word overlaps barely help" described the basin my particular
+search had settled into, not the search space.
 
 The fix was not a cleverer heuristic. It was spending ten minutes to phrase the
 problem in a form an exact solver already understands, and letting it both beat my
@@ -98,16 +96,16 @@ trusting your own hand-rolled cleverness, especially when that cleverness starts
 telling you the ceiling is lower than you hoped. It is often just telling you where
 it got tired.
 
-## Postscript: when the ceiling stops being reachable
+## Scaling to 57,130 titles
 
-The whole satisfaction above was the *certificate* — not just a long chain, but a
-proof that nothing longer exists. So I couldn't resist asking what happens on a
-bigger list. ITA's 6561 titles came from MovieLens. I used the MovieLens 25M
+The certificate was more valuable than the long chain: it proved that nothing
+longer exists. I then tried the same model on a bigger list. ITA's 6561 titles
+came from MovieLens. I used the MovieLens 25M
 dataset; after normalising its 62,423 rows, 57,130 titles remained. Same CP-SAT
 model, pointed at the bigger graph.
 
 The chain grew to **4,087 titles** — thirteen times the 310 — and every overlap
-verifies. But here is the honest part: it is *not* optimal, and I cannot tell you
+verifies. It is *not* optimal, and I cannot tell you
 how far from optimal it is. On the small list CP-SAT closed the gap in ten seconds
 and handed me a bound that met the answer. On the big list the cyclic core alone is
 19,255 titles, a longest simple path through it is genuinely hard, and the solver's
@@ -117,11 +115,7 @@ warm-started incumbent was 2910, 3439, 4012, then 4087. The first two gains were
 comparable (+529 and +573); the final round added only 75, and the long runs kept
 getting killed before they finished.
 
-So this number is a *floor*, not an answer — the exact mirror image of the small
-case. There the pleasing thing was a proven ceiling; here the honest thing is
-admitting there isn't one within reach, only a chain that keeps lengthening for as
-long as you feed it compute, with no way from the inside to know how much is left.
-That is its own lesson about scale: the exact-answer move that felt like mastery at
-6561 titles quietly stops paying out at 57,000, and the grown-up response is to say
-so — to report 4,087 as a partial result with its gap wide open, not to quote it in
-the same breath as the 310 as though it were the same kind of number.
+So 4,087 is a lower bound, not an answer. Unlike 310, it comes with an open
+optimality gap: CP-SAT's exact certificate did not survive the jump from 6,561
+to 57,130 titles. It found a much better answer than my heuristic and no bound
+worth printing.

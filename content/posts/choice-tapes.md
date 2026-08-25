@@ -17,7 +17,7 @@ fails on `766135`, base_quickcheck reports `766135`. Only structure
 shrinks: lists drop elements, but the elements themselves stay
 whatever they were.
 
-I do not think this is a bug. I think it is a principled surrender.
+This is a defensible trade-off.
 A `Shrinker.t` is a function from a value to smaller candidate values,
 and it cannot know what the generator that produced the value would
 have been willing to produce. Shrink an even number by halving and you
@@ -41,9 +41,8 @@ engine](https://hypothesis.works/articles/how-hypothesis-works/).
 Record every random decision the generator makes as a typed choice. To
 shrink, edit the recorded tape and run the generator again against it,
 accepting the edit only if the test still fails and the new recording
-is shorter or simpler. The property that makes this special: a shrink
-proposal cannot violate a generator invariant, because the proposal is
-not a value, it is an input to the generator. Whatever comes out went
+is shorter or simpler. A shrink proposal cannot violate a generator invariant
+because the proposal is not a value, it is an input to the generator. Whatever comes out went
 through every filter, every smart constructor, every dependent bind,
 exactly like the original.
 
@@ -106,12 +105,12 @@ into this original six-row comparison.
 | filtered evens, fail iff >= 100 | 0/100 (worst `21150`) | 100/100 | 0 | 90 |
 | bind: length-prefixed list, sum >= 100 | 0/100 (a 64-element monster) | 100/100 | 0 | 56 |
 
-One honest caveat lives in the stock column: its call counts are near
-zero, because it has almost nothing to try. The tape engine buys its
+The stock column's call counts are near zero because it has almost nothing to
+try. The tape engine buys its
 minimality with test executions.
 
-The bind row is the point. `let%bind len = ... in list_with_length
-~length:len ...` has no derivable shrinker at all, so stock reports
+The bind benchmark shows the main advantage. `let%bind len = ... in
+list_with_length ~length:len ...` has no derivable shrinker at all, so stock reports
 whatever it generated. The tape engine returns `[100]`, the global
 minimum, in 49 test executions on average: it lowers the length choice
 while deleting the choices of one element, replays, and the generator
@@ -173,7 +172,7 @@ that timing is not part of the determinism claim above. That story,
 with the compiler's actual review comments, is [the next
 post](@/posts/mode-checker-review.md).
 
-## Where this could go
+## Next steps
 
 The [repo](https://github.com/matthiasgoergens/tapecheck) has a
 drop-in `Tape_test` module mirroring

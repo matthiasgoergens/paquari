@@ -18,8 +18,8 @@ for its trickier data structures (the eytzinger search
 tree, the `bpos` ordering). So "which of these bugs does the machine
 catch" is something the codebase is actively betting on.
 
-Here is the borrow checker's slice, stated plainly: in-memory ownership
-and data races. Use-after-free, double-free, a `&mut` that aliases, two
+The borrow checker covers in-memory ownership and data races:
+use-after-free, double-free, a `&mut` that aliases, two
 threads racing on the same word. That's a real and valuable slice, and a
 Rust port of the extent-refcounting code really would close it. But for
 a filesystem it's a *small* slice, and the two bugs that actually ate my
@@ -67,9 +67,8 @@ particular recursion; the patch chose `NOIO` as the stronger, simpler
 invariant for every allocation under the write-buffer locks: do not
 start reclaim I/O there at all. It also upgraded an existing NOFS scope
 to NOIO. That upgrade was not needed for the documented SWP_FS_OPS
-recursion, but it makes the invariant uniform. The hard part isn't the
-fix, it's *finding
-every site*: every allocation that runs under a lock the write or journal
+recursion, but it makes the invariant uniform. Finding every site is harder:
+every allocation that runs under a lock the write or journal
 path can wait on, across the allocation.
 
 Now: which type would have flagged that? None of them. There is no type
@@ -106,8 +105,7 @@ terminates. The borrow checker won't catch it. Neither will exhaustive
 matching or any "make illegal states unrepresentable" trick, because the
 illegal state here isn't a value you can rule out of the type, it's time.
 
-Here's the turn, and it's the one that belongs on this blog. The tool
-that *can* reach this bug is the proof assistant, but not through a bare
+A proof assistant *can* reach this bug, but not through a bare
 termination check on the worker loop: each pass already terminates. The
 useful obligation is on the state transition. Under quiescence, every
 successful terminal dedup attempt must either convert or index the

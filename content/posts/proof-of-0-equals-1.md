@@ -13,14 +13,9 @@ program that outputs a stack of zeros, together with a valid proof that
 the same hash identifies a program outputting one. Both claims verify.
 A proof that 0 = 1.
 
-I should say up front what my contribution was and was not. The Miden
-team already knew the underlying weakness. It was written down, in a
-`TODO` comment, in their own source. My contribution was to notice
-that the comment described an exploitable soundness hole rather than a
-tidiness issue, and to actually build the exploit. The gap between "we
-know these two node types hash the same" and "here is a proof that
-0 = 1" is the whole of this post, and it is smaller than it looks and
-larger than it sounds.
+The Miden team had already recorded the underlying weakness in a `TODO`
+comment. I recognised it as an exploitable soundness hole rather than a
+tidiness issue and built a working exploit.
 
 Here is the program:
 
@@ -115,11 +110,9 @@ puzzle it was.
 
 ## Fixing a collision without paying for it
 
-The fix is conceptually easy: make different node types hash to
-different values. The interesting part is doing it inside an
-arithmetic circuit, where every extra operation is a real cost
-multiplied across every instruction, and where the hash function has a
-fixed number of input slots you have already spent.
+Different node types needed different hashes, but adding circuit operations
+would increase the cost of every instruction, and the hash function had no
+unused input slots.
 
 The thread turned into a small design discussion of the options, and
 Edward Kmett showed up with the cleanest of the arithmetic ones. Rather
@@ -142,9 +135,9 @@ margin, and spending an element of it was believed to cost security
 bits. Using different output slots as the digest costs no field
 operations but complicates the constraint system.
 
-Here is the part I did not see coming. Miden was already migrating to a
-new hash function, RPO (Rescue-Prime Optimized), and that migration
-changed the arithmetic of the decision. RPO's redesigned padding scheme
+Miden's concurrent migration to a new hash function, RPO (Rescue-Prime
+Optimized), changed the arithmetic of the decision. RPO's redesigned padding
+scheme
 freed the second capacity element, and its security analysis showed
 that spending it costs nothing below the 128-bit security target, so
 the objection to domain separation, the one thing that had made it look
@@ -167,24 +160,15 @@ domain at a time. The real trade-off is whether dedicating that part of
 the sponge state to a tag leaves enough capacity for the target security
 level; for RPO, the analysis said that it did.
 
-That said, I will not fault Miden's choice, and I might not be weighing
-every trade-off they were. Once RPO handed them a free register, domain
-separation was zero marginal cost against the work already in flight,
-the constraint-system impact was theirs to live with, and shipping the
-simple thing that closes the hole beats holding out for the elegant
-thing. The cheapest option in principle became the cheapest option in
-practice once a different piece of work moved the constraints. It is a
-good reminder that the right fix depends on the state of the whole
-system, not just the local problem, and that a design thread is worth
-having even when the answer changes out from under it.
+RPO gave Miden a free register, making domain separation the cheapest option
+in their actual constraint system even though I still prefer the affine mixer
+in isolation.
 
 ## Why this genre of bug is worth staring at
 
-The Miden executor was correct. The verifier was correct. The hash
-function was a fine hash function. Every component did what it said,
-and the system as a whole would happily certify that zero equals one,
-because two components disagreed about the meaning of a single hash and
-nothing forced them to agree.
+The executor, verifier, and hash function each behaved as specified, but the
+executor and verifier assigned different meanings to the same hash. The system
+as a whole would therefore certify that zero equals one.
 
 That is the shape of most soundness bugs I have seen in
 proof systems, and it is why they reward a particular habit: stop
@@ -196,14 +180,9 @@ binding between a program and its hash. An ambiguous tree encoding can
 break that binding with a structural collision hiding in it, even, as
 here, one the authors had already flagged.
 
-None of this is a knock on Miden. Writing down "this is not yet safe"
-in the code is exactly what a careful team does with a known gap, and
-they fixed it properly rather than papering over my particular
-witness. The value I added was small and specific: turning a line of
-self-aware `TODO` into a running artefact that makes the cost of
-leaving it undone impossible to misjudge. That is often the most
-useful thing an outsider can do for a serious project, and the Miden
-folks were a pleasure to do it with.
+Miden had documented the known gap and fixed the general encoding problem once
+shown a working witness. My contribution was the witness: a running artefact
+that demonstrated the practical consequence of the `TODO`.
 
 The full artefact, including the Dockerised proof (runnable as of
 December 2022 — the script tracks Miden's live `next` branch, which has

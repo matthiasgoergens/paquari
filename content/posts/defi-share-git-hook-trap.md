@@ -159,7 +159,7 @@ the git metadata layer, where code reviewers don't look.
 
 ## Campaign attribution: a shared kit
 
-This is not a bespoke attack; it is a consumer of a documented kit. Andrii
+This sample uses a documented kit rather than bespoke tooling. Andrii
 Romasiun's writeup
 ["Investigating malware spreading through Git repositories"](https://andrii.ro/blog/investigating-malware)
 (May 2026) describes the **identical playbook** from another LinkedIn
@@ -223,11 +223,10 @@ and [Romasiun's writeup](https://andrii.ro/blog/investigating-malware).
 
 ### Detection / hunting ideas
 
-The IoCs above tell you what the attack looks like; this section is for
-acting on it. Two audiences: individual developers — especially anyone in
-crypto who recently received a "please review our codebase" archive from a
-recruiter — can run the first check on their own machine in seconds. And
-security teams can sweep whole fleets and telemetry for the same signs,
+Individual developers — especially anyone in crypto who recently received a
+"please review our codebase" archive from a recruiter — can run the first
+check below in seconds. Security teams can sweep whole fleets and telemetry
+for the same signs,
 because this campaign targets their engineers specifically, and one hired
 "blockchain consultant" opening a zip on a work laptop is all it takes.
 

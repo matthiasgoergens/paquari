@@ -33,8 +33,8 @@ story, and most of it was a mistake.
 
 ## The descent
 
-The obvious thing, if you have spent any time around machine learning, is to
-learn the map directly. Generate endless training pairs from known books, feed a
+My first attempt was to learn the map directly. Generate endless training
+pairs from known books, feed a
 network the differences, train it to emit the two plaintexts. It barely learned.
 For a long time I assumed I was holding it wrong — wrong architecture, wrong
 loss, not enough data — when in fact the framing was doomed. The map from a
@@ -60,9 +60,9 @@ fitting, and eventually an FFT-based gradient-descent scheme for trigrams that I
 was very proud of for getting a "77.6% improvement" on a number that should never
 have been on the critical path.
 
-All of it was in service of a prior. And the prior was not the hard part.
+All of that work improved the prior, although search was the actual bottleneck.
 
-## The part that mattered
+## Beam search
 
 The thing that actually broke the cipher is a beam search over the two texts at
 once. Walk left to right. At each position, for each surviving hypothesis, try
@@ -71,19 +71,17 @@ because their difference is known. Score how English-like both halves are under
 your language model, keep the best few thousand hypotheses, prune the rest. At
 the end, read off the lowest-loss pair.
 
-Once that was in place, it worked — and the model barely mattered. The LSTM was
-enormous overkill for the job it was doing. Which raises the obvious question I
-had spent two years not asking: how well does the *dumbest possible* prior do?
+Once the beam search worked, replacing the LSTM with a much simpler prior became
+the obvious next experiment.
 
 ## The baseline I skipped
 
-So I rebuilt the whole thing from scratch around the baseline I should have
-started with. The language model is a character 5-gram: for every four-character
+I rebuilt the decoder around the baseline I should have started with. The
+language model is a character 5-gram: for every four-character
 context, count what character came next, across thirty-five public-domain
 books. Unseen contexts are interpolated with shorter ones, Witten-Bell style, so
-nothing ever gets zero probability. That is the entire model. It has no
-parameters to train, no GPU, no schedule. Built from 24 million characters, it
-takes about seven seconds.
+nothing ever gets zero probability. The model requires no training or GPU.
+Built from 24 million characters, it takes about seven seconds.
 
 Drop it into the same beam search, and it recovers about **97% of the characters**
 of nineteenth-century prose (96.8% on a broader held-out mix). The errors cluster
@@ -107,11 +105,11 @@ Weydon-Priors with his wife and Elizabeth-Jane — and a chapter of Darwin's
 the Galápagos. Neither book is in the training corpus. You can paste the
 recovered text into a search engine and name them both.
 
-## The lesson I would actually keep
+## Why the baseline mattered
 
-It would be cheap, and wrong, to conclude that n-grams beat neural networks. They
-do not, in general. The real lesson is about what a baseline *buys* you, and it is
-not just that it is cheaper.
+This result does not show that n-grams generally outperform neural networks. It
+shows that a cheap baseline can separate failures in the search from failures
+in the prior.
 
 This problem has two independent hard parts: is the search right, and is the
 prior good enough? Jumping straight to the LSTM entangled them. When nothing
@@ -122,7 +120,7 @@ enough prior" in seven seconds and lets you test the search *in isolation*. And
 the search was the entire discovery. I had it early, and then buried it under a
 model for two years.
 
-The reframe that makes this obvious in hindsight is that the language model —
+In this decoder, the language model —
 neural or counted — is only ever a *smoother*: an estimate of `P(next char |
 context)`. The beam search is identical whatever you plug in. My LSTM was an
 extravagantly expensive way to answer a question a lookup table answers well

@@ -45,9 +45,8 @@ wild (upstream issues
 kept returning to), which was reassuring in the way that only "it's not
 just me" can be.
 
-The two obvious explanations were both wrong, and being wrong was the
-useful part. It wasn't the OOM killer: it never fired. And swap didn't
-save me either; if anything the machine was worse for having it. So the
+Neither obvious explanation held up. The OOM killer never fired, and swap did
+not help; if anything the machine was worse for having it. So the
 memory pressure was real but it wasn't the *cause*. Something was holding
 still while the disks caught up.
 
@@ -80,24 +79,24 @@ I got them, fast, and the review was instructive in a way I didn't
 expect. Kent looked at it (and mentioned, in passing, that this was the
 first run of *POC*, [his own AI assistant](https://poc.bcachefs.org),
 doing a first pass of the code
-review; we are all, it turns out, working with something in the loop
-these days). His feedback landed on exactly the thing I'd gotten too
+review; AI-assisted review had reached bcachefs too). His feedback landed on
+exactly the thing I'd gotten too
 clever about: my `drop_locks_long_do()` helper was a nice idea but
 insufficient, because `unlock_long()` is an *automatic transaction
 restart*, and you don't want that firing implicitly. The right shape is
 to unlock, block for a few seconds, and *then* unlock long. He was also
 politely unconvinced that my mechanism fully explained the freezes, and
-asked the only question that matters: what does your testing show?
+asked what my testing showed.
 
 And he pointed me at [ktest](https://github.com/koverstreet/ktest) (his
 existing test harness) instead of the QEMU contraption I'd been building
 to fake a slow disk with blkio write throttling. No need to roll your
 own framework.
 
-## What it turned into
+## Stress tests and swap support
 
-That review is the hinge of the whole thing. "What does your testing
-show" sent me to build the tests properly, inside ktest. I used
+Kent's question — "What does your testing show?" — sent me to build the tests
+properly inside ktest. I used
 `dm-delay` to reproduce the slow-HDD reconcile contention, then built a
 separate, calibrated swap-pressure suite: repeated rounds near full swap
 utilisation, swapoff under pressure, no-swap controls, and ablations of
@@ -119,7 +118,7 @@ sillier than any of that: my new module was being shadowed by the stock
 `bcachefs.ko` that the initramfs loaded first. `mkinitcpio -P` and a
 reboot.)
 
-The deep part was making it stable under real memory pressure. Swap I/O
+Stability under real memory pressure was harder. Swap I/O
 is itself invoked by reclaim, so it has to reach the storage path without
 recursively entering reclaim and waiting on the filesystem resources it
 needs to make progress. My historically tested branch was deliberately
@@ -148,14 +147,9 @@ shrinking, a long-requested feature that another developer, jullanggit,
 and I both swung at around the same time — his implementation was the
 cleaner one. Different story, same neighbourhood.
 
-## The thing I'd actually tell you
+## The reproducer mattered most
 
-The technical fixes are the visible part, but the honest centre of this
-is a line I wrote in that Reddit thread and mean completely: the stress
-test setup was the only reason I could make any of these changes with any
-confidence at all. I am not Kent; I have not internalised this codebase
-the way he has. What let a user-who-got-annoyed turn into someone sending
-patches to a filesystem was not cleverness; it was a reproducer that
-turned "I think this is the bug" into "watch it deadlock, then watch it
-not." A frozen `ls` is a bad bug report. A test that freezes on demand
-is a place to stand.
+The stress harness was the only reason I trusted these changes. I had not
+internalised the codebase the way Kent had; the reproducer let me replace "I
+think this is the bug" with "watch it deadlock, then watch it not." A frozen
+`ls` is a bad bug report. A test that freezes on demand is useful evidence.

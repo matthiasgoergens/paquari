@@ -11,7 +11,7 @@ kernel. The method takes much less cleverness than the results suggest:
 **build the project with sanitisers turned on, and run the test suite it
 already has.**
 
-That really is all of it. No fuzzer, no formal methods, no new tests.
+The method required no fuzzer, formal methods, or new tests.
 Mature projects have spent decades accumulating suites that exercise
 their edge cases, and the big ones do run sanitisers — some of the
 sanitisers, over some of their build configurations. I just looked for
@@ -171,8 +171,7 @@ bug report from a codebase you happen to have open.
 
 ## The noise, measured
 
-A post that only lists wins would be marketing, so here is the other
-column of the ledger.
+The checks also produced substantial noise.
 
 Not every sanitiser check is worth turning on, and the differences are
 large. For CPython: `local-bounds` ran clean over the full suite with
@@ -186,7 +185,7 @@ clean, but because CPython contains no `_Nonnull` annotations anywhere,
 so the check had nothing to check. A clean run from an instrument that
 cannot fire is not a clean bill of health.
 
-Two consequences follow. For a maintainer, adoption isn't all-or-nothing:
+For a maintainer, adoption isn't all-or-nothing:
 a check too expensive or too noisy to gate every commit can still run on
 a schedule — nightly, weekly — where its findings arrive as leads rather
 than blocked merges. And for a bug hunter, the noisy end of the table is
@@ -195,7 +194,7 @@ sites hands you a pre-sorted list of places to go digging. CI gating and
 hunting are different consumers of the same output, with very different
 tolerance for noise.
 
-Which brings me to the trap I actually fell into. CPython builds with
+One configuration trap invalidated an afternoon of results. CPython builds with
 `-fno-strict-overflow`, and that flag *silently disables* clang's
 `pointer-overflow` sanitiser check — while gcc accepts the flag and never
 implemented the check at all. I spent most of an afternoon producing
@@ -214,7 +213,7 @@ the `-fno-strict-overflow` that ate my afternoon three years later. The
 migration stalled halfway, and the trap I fell into was one I had laid
 myself.
 
-And one more honest data point: the test I retracted. A reviewer
+I also retracted a regression test. A reviewer
 reasonably asked for a regression test on the StringIO fix. I wrote one,
 then discovered it passes on unfixed builds too: with the compilers we
 have today, this particular UB happens to have no observable effect —
@@ -229,16 +228,14 @@ thread beats shipping a test that asserts nothing.
 
 ## Tooling
 
-I should say plainly how the work divides. I used AI tools to uncover the
-undefined behaviour and to build the reproducers: driving the matrix of
-build configurations, running the suites, aggregating thousands of
-sanitiser reports into distinct sites, and turning a report into a
-minimal, runnable trigger. The discovery instrument is the sanitiser and
+AI tools drove the build matrix, ran the suites, grouped thousands of
+sanitiser reports into distinct sites, and reduced reports to minimal,
+runnable triggers. The discovery instrument is the sanitiser and
 the existing test suite; the agents are how one person points that
 instrument at several codebases in a few weeks. The actual fixes are,
 usually, easy to write by hand — most of the patches above are a handful
-of lines, and the hard part was never the diff but the verification
-around it. Every "usually" in this post has the same honest explanation:
+of lines, while verification takes most of the work. Every "usually" in this
+post has the same explanation:
 I deliberately picked low-hanging fruit. Whenever something proved hard —
 a fix that wanted a design discussion, a reproduction that wouldn't
 stabilise — I moved on to the next candidate. The yield looks the way it

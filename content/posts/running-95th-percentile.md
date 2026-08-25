@@ -1,7 +1,7 @@
 +++
 title = "Exact running quantiles in linear expected time, if the input is shuffled"
 date = 2026-07-19
-description = "Maintain the exact 95th percentile of a stream, online, with no sketches and no approximation. Random arrival order turns a boring Θ(n log n) problem into a Θ(n) one: a Θ̃(√n) window if you may fail once in a blue moon, and — the punchline — the naive two-heap method already runs in expected linear time when you build it from pairing heaps."
+description = "Maintain the exact 95th percentile of a stream, online, with no sketches and no approximation. Random arrival order turns a boring Θ(n log n) problem into a Θ(n) one: a Θ̃(√n) window if you may fail once in a blue moon, while the naive two-heap method already runs in expected linear time when you build it from pairing heaps."
 +++
 
 Everyone who runs a service has the dashboard: p50, p95, p99 latency.
@@ -18,7 +18,7 @@ search tree with order-statistic queries: Θ(n) space, Θ(n log n) total
 time. The space part is not improvable either — one-pass exact
 selection needs linear storage, a classical result of [Munro and
 Paterson](https://www.sciencedirect.com/science/article/pii/0304397580900614)
-(1980). So the interesting question is what the random order buys.
+(1980). The question is what random order buys.
 
 ## The number that runs the whole problem: √n
 
@@ -75,10 +75,9 @@ rebuild work ever exceeds a Θ(n) budget, switch permanently to the
 boring balanced tree — and the worst case is capped at the classical
 Θ(n log n) baseline at no expected cost.
 
-That was where I would have stopped. It turns out the naive algorithm
-already does better.
+I had overlooked that the naive algorithm already does better.
 
-## The punchline: two pairing heaps
+## Pairing heaps make the naive method linear in expectation
 
 The textbook two-heap method maintains a max-heap of the bottom 95% and
 a min-heap of the top 5%; the answer sits at the root of the big heap,
@@ -150,7 +149,7 @@ are delicate, which is exactly why the argument above is a direct
 expected-actual-cost analysis of this specific workload rather than an
 appeal to some general theorem about their niceness.
 
-## Coda
+## Related results
 
 The literature around this is tidy: [Munro and
 Paterson](https://www.sciencedirect.com/science/article/pii/0304397580900614)

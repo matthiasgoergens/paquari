@@ -11,13 +11,10 @@ now, and some of our best design ideas were never written up. This
 post starts paying down that debt with the one I had the most trouble
 explaining while it mattered: how independent programs coordinate.
 
-The trouble was not that people found the design wrong. It was worse:
-I repeatedly failed to convince smart people in the field that it
-solved a problem anyone had. At some point I started calling it "a
-solution in search of a problem" myself. I now think I know exactly
-why the conversations went that way, and the diagnosis is the most
-interesting part, so this post tells the story in that order: the
-idea, the failure to sell it, the diagnosis.
+People did not find the design wrong; I failed to convince smart people in
+the field that it solved a real problem. At some point I started calling it
+"a solution in search of a problem" myself. This post explains the design,
+why I failed to sell it, and what I misunderstood.
 
 ## Programs that cannot speak
 
@@ -73,7 +70,7 @@ verification key as an input. Mozak's own recursive verifier does
 exactly that. An unforeseen program can therefore join a recursive
 construction if the surrounding policy permits it.
 
-The problem moves rather than disappears: **who vouches for the
+Recursion leaves one question unanswered: **who vouches for the
 verification tree?** A proof of a black-box user program says that this
 particular program ran with these public commitments. It does not give
 the settlement layer an independently checkable list of the proofs that
@@ -86,8 +83,8 @@ Pinning a trusted root program makes the inference sound, but gives one
 program privileged responsibility for the composition. A generic
 recursive accumulator can avoid fixing the child programs in advance,
 but it must itself verify every child and propagate a commitment to the
-complete participant set. That works. It is also no longer recursion
-*alone* as coordination; it is a cast protocol implemented recursively.
+complete participant set. That works by implementing a cast protocol
+recursively, not by using recursion alone as the coordination mechanism.
 
 The script is that protocol made explicit. The transaction verifier,
 not any user program, checks a proof for every seat in the cast, checks
@@ -112,8 +109,7 @@ I found this argument completely convincing. The people I pitched it
 to mostly did not. They kept asking, gently, when a set of programs
 that genuinely do not trust each other, cannot read each other, and
 were written in ignorance of each other would ever need to agree on
-one atomic action. Fair question. Here is the answer I wish I had
-had.
+one atomic action. I eventually found an answer.
 
 ## The one-program world
 
@@ -138,14 +134,9 @@ and paid with a single all-seeing executor, contracts that are public
 to it, one monolithic execution trace, and the standing cost of
 proving an interpreter interpreting instead of programs running.
 
-Mozak made the opposite choice: no interpreter. Contracts are
-zkVM-native programs, each proven directly, by whoever wants to prove
-it. The moment you make that choice you *have no executor to mediate
-calls* — so you are forced to invent coordination that isolated,
-independently-generated proofs can each check alone. That is the
-script. The design was never a feature we bolted on; it is what
-remains of "A calls B" after you delete the layer that was doing the
-calling.
+Mozak used no interpreter. Contracts were zkVM-native programs proved
+independently, so scripts supplied the coordination that an interpreter would
+normally provide.
 
 Distributed systems has a name for this distinction. *Orchestration*:
 a central conductor holds the logic and tells every participant what
@@ -185,15 +176,12 @@ puts it plainly, "there is no composability between private
 applications": one application cannot take another's private state as
 input. That wall is exactly where the script begins.
 
-## Where this is going
+## Applications and unfinished work
 
-The regime where all the assumptions fail together — mutual
-distrust, mutual opacity, participants unknown in advance — is not
-exotic. It is regulated custody, cross-institution settlement,
-confidential governance rules, private applications that need each
-other's verdicts. The field does not lack the problem; it lacks it
-*visibly*, because the dominant architecture dissolves it at the cost
-of an all-seeing middleman, and everyone has stopped seeing the cost.
+Mutual distrust, private programs, and participants unknown in advance arise
+in regulated custody, cross-institution settlement, confidential governance,
+and private applications. Interpreter-based systems conceal this coordination
+problem by assigning it to an all-seeing intermediary.
 
 That is the diagnosis, and also the apology I owe my past
 conversation partners: I was describing a solution to a problem my
@@ -205,10 +193,10 @@ the write-ups are landing here instead. The posts that follow will cover the
 mechanism in earnest: how settlement binds proofs to seats without
 reading anyone's output, why "who are you in this transaction" is a
 subtler question than it looks, and how we made global state advance
-in parallel by making most operations commute. The prototype was
-never finished. The ideas, I think, deserve to be.
+in parallel by making most operations commute. Although the prototype was
+never finished, I think these ideas still deserve a full account.
 
-That last sentence is also an invitation. Finishing them no longer
+There is also room to continue the work. Finishing it no longer
 means building a zkVM: the 2026 provers supply execution proofs and
 recursion off the shelf, so what remains is the part that was always
 the point — the coordination layer, the state model, and a handful of

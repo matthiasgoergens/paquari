@@ -24,8 +24,8 @@ heap**: it will tell you whether an item ever left, but it is too shy
 to say who left when. Under that restriction, the whole sequence can
 be processed in O(n).
 
-The restriction is not cosmetic; it is load-bearing. If you also
-learned the order of the pops, you would have sorted, and the lower
+The restriction is necessary. If you also learned the order of the
+pops, you would have sorted, and the lower
 bound would apply. If you even learned which pop removed which item,
 you could sort. The shy heap sits exactly on the edge of what the
 lower bound permits, which is some evidence that it is the right
@@ -78,15 +78,15 @@ operation for fixed ε.
 So run the sequence once through a soft heap with ε = 1/3. At least
 r − εm of the true survivors are certified (r survivors among m
 inserts), and they can be set aside for good. Repeat on what is left.
-This works beautifully — until it doesn't. Each pass shrinks the
-inserts towards the number of pops and then stalls: on a sequence that
+This first pass stalls. Each round shrinks the inserts towards the
+number of pops: on a sequence that
 pops nearly everything, almost nothing gets certified, and the
-recursion treads water. My draft paper, I will admit, currently ends
-at almost exactly this point, one section before the punchline.
+recursion treads water. My draft paper currently ends at almost exactly this
+point, before the complementary-trace argument.
 
 ## Idea two: every heap trace has a dual
 
-Here is the punchline. A trace of inserts and pop-*mins* has a
+The way past that stall is a complementary trace. A trace of inserts and pop-*mins* has a
 complementary trace of inserts and pop-*maxes*, computable in linear
 time without a single key comparison, whose exact run leaves behind
 precisely the items the original run pops. In the scheduling costume
@@ -105,8 +105,8 @@ settles a third of the remaining items and hands the unresolved
 two-thirds to the next round: a geometric series, total work three
 times one two-pass round. That is the whole algorithm.
 
-The two passes are not an ad-hoc trick, and this is where it gets
-pretty. Fix a trace — the inserts and deletes in a fixed order, each delete
+Matroid duality explains why the two passes fit together. Fix a trace — the
+inserts and deletes in a fixed order, each delete
 free to remove whatever it likes — and consider all the sets of items
 you could be left holding. The possible outcomes form the bases of a
 [matroid](https://en.wikipedia.org/wiki/Matroid). As abstract matroids,
@@ -137,7 +137,7 @@ incidentally yet another linear-time selection algorithm, and the
 maximum-weight balanced-parentheses subsequence problem succumbs to the
 same reduction.
 
-## Where this stands
+## Implementation and proof status
 
 A [Rust implementation](https://github.com/matthiasgoergens/shy-heap-rs)
 exists and is public, together with a new soft-heap implementation
@@ -154,6 +154,5 @@ formalised alongside it. Getting a proof assistant to review this
 argument has already reshaped it once, and that experience is the next
 post in the reviewer-ladder series this blog keeps returning to.
 
-The shy heap has spent years as a private obsession. Writing it up is
-how private obsessions either become results or get honestly retired,
-and I intend to find out which this one is.
+I have carried this problem for years. Publishing the implementation and
+formalisation is my attempt to turn it into a finished result.

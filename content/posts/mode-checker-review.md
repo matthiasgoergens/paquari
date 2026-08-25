@@ -42,9 +42,8 @@ The checker inferred, from the
 definition alone, that a function closing over a global mutable ref
 cannot be handed to another domain, and told me which value, in which
 closure, violated which expectation, and why the expectation existed.
-This is the code review comment a careful colleague would leave:
-"this global will bite you the moment you go parallel", except it is
-machine-checked and cannot be argued with.
+In effect, the compiler identified the same concurrency hazard a human
+reviewer should flag: the global mutable reference made parallel use unsafe.
 
 The fix the checker forces is the design a reviewer would have asked
 for anyway: carry the tape inside the random state.
@@ -58,9 +57,9 @@ type t =
 let attach t tape = { t with tape = Some tape }
 ```
 
-No global, no install/uninstall dance, and every shrink attempt
-becomes self-contained: its own tape, its own RNG state, nothing
-shared. After the refactor the same probe, now building all of its
+After the refactor, each shrink attempt carries its tape and RNG state
+explicitly and shares no mutable state with other attempts. The same probe,
+now building all of its
 state inside the closure, compiles and runs. The before and after are
 one commit apart, and the shim's diff is the honest one: signatures now say
 what the code always meant.
@@ -98,7 +97,7 @@ in the OxCaml build. My pool currently uses plain `Stdlib.Domain` so the
 same source builds on stock OCaml. The self-contained attempt state is a
 useful prerequisite for either design, not the completed migration.
 
-I want to dwell on what did NOT happen. I did not add mode annotations
+The scope of this result is narrow. I did not add mode annotations
 to my engine, and I have not yet ported the pool to a new concurrency
 framework. I compiled existing code under a compiler with a stricter
 type system and asked it one question. It found the global state that
@@ -145,7 +144,7 @@ of the box, and the parallel ceiling is the same. Identical results throughout:
 same failures found, same 57000 shrink attempts, on both compilers at
 every width.
 
-## The takeaway
+## What the mode check bought
 
 The pitch for OxCaml's modes is usually written from the perspective
 of people building concurrent systems on purpose. My engine is a
@@ -155,7 +154,7 @@ The mode checker found the shortcut from outside, produced the
 refactor a good reviewer would have demanded, and the refactor paid
 for itself the same afternoon with a 4.6x wall-clock win.
 
-## Postscript: the checker reviewed the upstream PR too
+## Upstreaming exposed another mode question
 
 After this post was drafted, I turned the shim into a proposed
 upstream patch: an [Intercept record carried inside

@@ -15,16 +15,14 @@ size, not bytes produced, and reflink means no bytes are produced at all.
 
 [cg]: https://codegolf.stackexchange.com/questions/199528/fastest-yes-in-the-west
 
-I wanted the honest version of the question. Not "how large a file can
-you make appear" but: **how fast can a process actually hand `y\n` to
-another process today?** No file, no reflink; the bytes have to arrive
+I instead measured **how fast one process could hand `y\n` to another
+process**. No file, no reflink; the bytes had to arrive
 somewhere real. On my desktop — an i9-13900K, kernel 6.17 — GNU `yes`
 pushes about 80 GiB/s into `pv > /dev/null`.
 
-The answer, after a day of measuring, is that the interesting bottleneck
-is not in userspace at all, and that I was wrong about *why* three
-separate times. This is the record of that, including the wrong parts,
-because the wrong parts are where the method earned its keep.
+After a day of measurements, I found a kernel bottleneck and corrected three
+explanations for it. This post records those corrections and the measurements
+that forced them.
 
 ## Userspace first: 209 GiB/s
 
@@ -100,8 +98,7 @@ That patch is about fifteen lines. Measured A/B in identical VMs, it took
 the 2 MiB-folio case from 135 GiB/s to **2.3 TiB/s**, with the 4 KiB-folio
 and `write(2)` paths unchanged as controls, and byte-exact output.
 
-Then it fell apart in three different ways, and each one is more
-interesting than the number.
+Three follow-up checks showed that the headline result was misleading.
 
 ## Wrong explanation #1: it isn't the refcount
 
@@ -109,7 +106,7 @@ I had a tidy story for the 17×: the `folio_get`/`folio_put` pair means
 the producer and consumer cores ping-pong the folio's refcount cache
 line, 512 times per folio. Collapsing to one buffer removes 511 of them.
 
-Tidy, and false. I built the cheap version of that idea — keep per-page
+The measurement disproved that explanation. I built the cheap version of that idea — keep per-page
 buffers, but take all the references at once with a single
 `folio_ref_add(folio, npages)` — and **pre-registered** what I expected
 (1.5–2.5×) and what I would chase if it came out otherwise. It came out
@@ -177,8 +174,8 @@ That relationship was invisible while the accounting was broken.
 With capacity enforced, a `read(2)` consumer took exactly one 1 MiB
 buffer and then hung forever.
 
-The cause is a pattern worth naming: **byte-aware blocking without
-byte-aware waking**. A pipe holding one 1 MiB buffer in a 256-slot ring
+The writer blocked on byte capacity, but the reader woke writers only when a
+ring slot became free. A pipe holding one 1 MiB buffer in a 256-slot ring
 is byte-full but not slot-full, and the reader only ever woke writers
 when a *slot* freed:
 
@@ -208,7 +205,7 @@ back byte-exact, 32 MiB through an `AF_UNIX` socket byte-exact, 16 MiB of
 blocking pipe-to-pipe through a 4 KiB destination byte-exact, and every
 capacity probe bounded.
 
-## Wrong explanation #4: it isn't the ring either — it's the wakeups
+## Wrong explanation #4: ring capacity reduces wakeups
 
 Explanation #1 left me with "the cost is the per-page *machinery*". That
 is close enough to sound finished, which is exactly the danger.
@@ -221,8 +218,8 @@ Every zero-copy producer scaled hard: `vmsplice` 29.6 → 160.6, `tee`
 31.4 → 144.5, `splice` 31.9 → 213.3. And at the smallest ring all three
 sat within 8% of each other, only separating as it grew.
 
-So it is ring capacity, not per-page machinery. I wrote that down and
-was wrong again within the hour.
+I attributed the result to ring capacity, but the next experiment overturned
+that explanation within an hour.
 
 `sendfile(2)` uses a pipe internally — `splice_direct_to_actor()`
 borrows one from `current->splice_pipe`, hardcoded to 16 slots by
@@ -246,21 +243,21 @@ A 16× ring increase buys about **9%**. The same 16× bought 6.58× in the
 sweep above.
 
 The difference between the two experiments is that the sweep had a
-separate consumer *process*. What ring capacity actually amortises is
-producer/consumer **wakeups and context switches** — not per-fill work,
-not slot machinery. Where the fill and the drain happen in one thread
+separate consumer *process*. In the two-process benchmark, a larger ring
+reduced producer/consumer wakeups and context switches. Where the fill and the
+drain happen in one thread
 inside one syscall, as they do inside `sendfile`, there is nothing to
 amortise and the ring barely matters.
 
-Which quietly demolishes the best justification I had. I had spent an
-afternoon establishing that `splice_folio_into_pipe()` is reached from
+That result removed my best practical justification for the patch. I had spent
+an afternoon establishing that `splice_folio_into_pipe()` is reached from
 `sendfile(2)`, `copy_file_range()`, nfsd, ksmbd and overlayfs copy-up,
 and writing that up as the answer to "who would actually benefit".
 Every one of those runs a single-threaded fill-and-drain loop. The
 speedup is real, but it belongs to *cross-process* pipes: shell
 pipelines, `yes | pv`, and FUSE daemons reading `/dev/fuse`.
 
-The thing I had been measuring all along was the benchmark's own shape.
+The benchmark's two-process design had produced the apparent benefit.
 
 ## Does any of this matter outside a benchmark?
 
@@ -306,8 +303,6 @@ pace.
 | AF_UNIX socket | 10.3 | 4.9 | **2.1×** |
 | file → file | ~3.8 | ~3.4 | ~1.1× (noisy) |
 
-Two things worth carrying away from that table.
-
 The socket figure is the honest one, and it independently reproduces a
 number from the kernel mailing list: Willy Tarreau, defending splice,
 reported 62 Gbit/s per core with it against 31 without. That is 2.0×. I
@@ -315,7 +310,7 @@ got 2.1× by a completely different method on completely different
 hardware. When two unrelated measurements of a contested quantity agree,
 that is about the best evidence available.
 
-And the gap between the first two rows is the real lesson. **A
+The first two rows show that **a
 microbenchmark with no destination cost overstates zero-copy by roughly
 ninefold.** That single fact reconciles two camps who have been talking
 past each other for years: the advocates quoting enormous speedups are
@@ -325,7 +320,7 @@ is talking about the socket row. Both are looking at real numbers.
 
 I had been quoting the `/dev/null` row throughout.
 
-## The twist: they are removing it
+## Meanwhile, the kernel community is removing zero-copy splice paths
 
 While I was doing this, the kernel community started dismantling the
 thing I was optimising.
@@ -349,8 +344,7 @@ GNU coreutils, meanwhile, removed the splice and `vmsplice` tricks from
 started this and the kernel path that answered it were deprecated in the
 same season, which I choose to find funny.
 
-The obvious reading is that the patch is dead. I think the more useful
-reading is that it changed genre. The open question in that thread is
+The patch is unlikely to land, but the open question in that thread is
 whether splice's performance justifies its security cost, and it is
 being argued with one real number — Tarreau's — against a lot of
 intuition. A careful 2.1× that agrees with his, plus the observation
@@ -358,9 +352,9 @@ that the 18× everyone quotes is a measurement artefact, is worth more to
 that discussion than the patch was ever worth to a merge window. A
 measurement cannot be NAKed.
 
-## What I would take from this
+## Methods that caught the errors
 
-Three habits paid for themselves, all of them about being wrong faster.
+Four practices exposed mistakes quickly.
 
 **Ask a different model family to refute you, and make it predict a
 number.** All three capacity bugs came from an adversarial review that
@@ -391,10 +385,6 @@ sixty-four randomised kernel builds, while "two processes" and "discard
 the output" never moved once — not because I had decided they were
 fixed, but because I had never noticed they were choices.
 
-The patch is not upstream and now probably never will be, at least in
-the form I wrote it. That is a fine outcome. The finding underneath it
-still states in one sentence — *splice hands a pipe one buffer per page
-even when the page cache is handing splice something 512 times larger* —
-and the more useful finding, the one I did not go looking for, states in
-one too: **most of what people quote about zero-copy is measured against
-a destination that does not exist.**
+The patch will probably not reach upstream, but two findings remain: splice
+creates one pipe buffer per page even for 2 MiB folios, and common zero-copy
+benchmarks exaggerate the benefit by discarding output.

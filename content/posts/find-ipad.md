@@ -32,8 +32,8 @@ many attempts. I had been everywhere in the house with my ear out. The
 sidebar might as well have read "warm, getting warmer" while declining to say
 anything further.
 
-"Nearby", it turns out, is the load-bearing word. It means *this Mac can hear
-the iPad over Bluetooth right now*. Apple devices broadcast BLE
+"Nearby" supplied the useful clue: this Mac could hear the iPad over Bluetooth
+right then. Apple devices broadcast BLE
 advertisements constantly — it's how the Find My network locates devices that
 are offline, with every passing iPhone acting as a relay. Which means the
 signal is right there in the air, with a strength that falls off with
@@ -45,8 +45,8 @@ has the chip), no hidden API — but received signal strength is free.
 
 The scanner has two modes. List mode shows every Apple device in radio
 range, sorted by smoothed RSSI, with Apple's manufacturer-data frame types
-decoded — and here the identification problem, which I had expected to be
-the hard part, simply evaporated. BLE advertisements rotate their addresses
+decoded. I had expected identification to be difficult, but BLE advertisements
+rotate their addresses
 every fifteen minutes for anti-tracking reasons, so I'd braced for
 guess-and-check against anonymous IDs. Instead, because the iPad is on my
 own Apple ID, macOS resolved its identity outright:
@@ -94,7 +94,8 @@ Which brings me to where it was: on the floor. In the open. A black iPad in
 a black case, flat on a dark brown wooden floor, in poor evening light —
 and I'm colourblind. I had walked past it, probably repeatedly, possibly
 within arm's reach, while a laptop beeped at me that I was practically
-standing on it. The Bluetooth was right. The failure was optical. The
+standing on it. The Bluetooth reading was accurate; I had simply failed to see
+the iPad. The
 cheapest upgrade to Find My, I now understand, is a case in a colour that
 doesn't occur in flooring.
 
@@ -112,12 +113,13 @@ but then it should have chirped when I picked it up and woke it. It didn't.
 And my own screenshot from mid-hunt shows Find My reporting "Play Sound:
 Off" — not pending — after multiple attempts.
 
-*No connectivity path?* This is where it gets genuinely annoying. This is a
+*No connectivity path?* The remaining evidence rules out a simple connectivity
+failure. This is a
 cellular iPad. The SIM works; the data plan is alive and in regular use. It
 had 44% battery when found. Top floor, decent coverage. Every hop of the
 delivery path was individually healthy.
 
-The picture that survives all the evidence: **findable and reachable are
+My best explanation: **findable and reachable are
 different channels, and a sleeping iPad keeps only the first.** Location
 comes from the iPad's BLE beacon, relayed by my other Apple devices —
 transmit-only, works in deep sleep, hence the cheerful "2 minutes ago". But
@@ -132,14 +134,14 @@ precisely and exclusively when Find My needs it.
 And the queued commands? Apparently written in disappearing ink. Whether
 they expire server-side or never durably queue, by the time the iPad finally
 reconnected there was nothing waiting for it. So for a deeply sleeping iPad,
-Play Sound isn't delayed — it's *lossy* — and nothing in the UI hints at
-that. The button clicks. The map says Nearby. The sound never comes.
+In this case the Play Sound request appears to have been dropped rather than
+delayed, although the interface gave no indication that delivery had failed.
 
 ## The design that already exists
 
-The obvious question — my Mac is within Bluetooth earshot of the iPad, both
-signed into my Apple ID, why can't the beep command travel over *that* radio?
-— turned into a satisfying back-and-forth with Claude in which I proposed
+My Mac was within Bluetooth earshot of the iPad and both devices were signed
+into my Apple ID, so why couldn't the beep command travel over *that* radio?
+The question turned into a back-and-forth with Claude in which I proposed
 fixes and it explained what each one breaks, and I fixed the breakage.
 
 Replay attacks against a naive signed beep packet? Sign a timestamp — if the
