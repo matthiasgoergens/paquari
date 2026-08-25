@@ -1,5 +1,5 @@
 +++
-title = "The mode checker reviewed my code"
+title = "Parallel shrinkers under OxCaml's mode checker"
 date = 2026-07-16T21:49:00+08:00
 description = "OxCaml's mode system found the one global that made my shrink engine unsafe to parallelise, explained itself, and the forced refactor paid for itself the same afternoon."
 +++

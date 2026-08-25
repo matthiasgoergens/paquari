@@ -1,5 +1,5 @@
 +++
-title = "What the borrow checker won't review"
+title = "Two bcachefs bugs beyond the borrow checker"
 date = 2026-07-16T23:59:00+08:00
 description = "Two bcachefs bugs that ate my week. The borrow checker would have caught neither: one is an allocation in the wrong context, the other a loop that never ends, but a proof assistant catches the second. Different reviewers for different bugs."
 +++

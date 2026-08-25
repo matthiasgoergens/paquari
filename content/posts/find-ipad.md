@@ -1,5 +1,5 @@
 +++
-title = "Find My said 'Nearby'. The iPad said nothing."
+title = "A Bluetooth Geiger counter for a lost iPad"
 date = 2026-07-30T21:30:00+08:00
 description = "My iPad mini went missing in my own house. Find My could see it but couldn't make it beep. One prompt to Claude produced a Bluetooth Geiger counter that found it — and the postmortem explains why Play Sound never stood a chance."
 +++

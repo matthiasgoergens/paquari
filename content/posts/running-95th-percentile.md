@@ -1,5 +1,5 @@
 +++
-title = "Exact running quantiles in linear expected time, if the input is shuffled"
+title = "Exact running quantiles in linear expected time under random order"
 date = 2026-07-19
 description = "Maintain the exact 95th percentile of a stream, online, with no sketches and no approximation. Random arrival order turns a boring Θ(n log n) problem into a Θ(n) one: a Θ̃(√n) window if you may fail once in a blue moon, while the naive two-heap method already runs in expected linear time when you build it from pairing heaps."
 +++

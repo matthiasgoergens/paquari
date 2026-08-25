@@ -1,5 +1,5 @@
 +++
-title = "Claude Code permissions: parse the command, don't match the string"
+title = "A shell parser for Claude Code permissions"
 date = 2026-08-10T15:24:13+08:00
 description = "Claude Code's permission allowlist matches command strings by prefix, and a shell command isn't a string. Four months of running a PreToolUse hook that parses commands instead: the mechanics, the numbers from its own log, what it can't do — and the hole in it that reviewing this very post uncovered."
 +++

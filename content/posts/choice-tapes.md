@@ -1,5 +1,5 @@
 +++
-title = "Your generators already know how to shrink"
+title = "Choice tapes for generator-guided shrinking"
 date = 2026-07-16T21:48:00+08:00
 description = "A Conjecture-style choice-tape shrink engine for base_quickcheck, built on a seam OCaml gets almost for free."
 +++

@@ -1,5 +1,5 @@
 +++
-title = "The two-time pad wanted a 5-gram, not a neural net"
+title = "A character 5-gram breaks the two-time pad"
 date = 2026-07-16T23:28:00+08:00
 description = "For years I threw LSTMs, unsupervised diff-recovery, and a 15 GB corpus at a reused one-time pad. What actually broke it was a character 5-gram and a beam search that refuses to commit early — and I should have tried that on day one."
 +++

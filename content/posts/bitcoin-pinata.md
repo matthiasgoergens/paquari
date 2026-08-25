@@ -1,5 +1,5 @@
 +++
-title = "Smashing the Bitcoin Piñata"
+title = "A source audit of the Bitcoin Piñata"
 date = 2026-08-12T13:00:00+08:00
 description = "I spent several days auditing a 2017 OCaml TLS stack that once protected 10 BTC. The code held up better than I expected."
 +++

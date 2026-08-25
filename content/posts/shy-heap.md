@@ -1,5 +1,5 @@
 +++
-title = "The shy heap: priority queues in linear time, if you promise not to peek"
+title = "The shy heap: offline priority queues in linear time"
 date = 2026-07-18
 description = "Run n insert/pop-min operations and ask only who survived: soft heaps plus matroid duality answer in O(n), slipping past the sorting bound that makes heaps cost log n. An idea I have carried for years, with a Rust implementation, a stalled paper, and a Lean proof now taking shape."
 +++

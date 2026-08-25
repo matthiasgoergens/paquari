@@ -1,5 +1,5 @@
 +++
-title = "Point UBSan at your existing test suite"
+title = "Mature C test suites, with UBSan enabled"
 date = 2026-08-07T23:47:13+08:00
 description = "Mature C projects run some sanitisers over some of their build configurations. I spent a few weeks of paternity leave hunting the gaps in that coverage matrix — CPython, glibc, the Linux kernel — and this is what fell out: the bugs, the noise ratio, and a trap I had laid for myself years earlier."
 +++

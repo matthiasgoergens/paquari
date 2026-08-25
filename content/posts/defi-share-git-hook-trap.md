@@ -1,5 +1,5 @@
 +++
-title = "Anatomy of a LinkedIn \"fake job\" malware drop: the DeFi_share.zip git-hook trap"
+title = "The DeFi_share.zip git-hook malware trap"
 date = 2026-08-08T14:00:00+08:00
 description = "A recruiter-sent project archive with a zeroed working tree and a planted .git/hooks/post-checkout: any git checkout pipes a remote payload into your shell."
 +++

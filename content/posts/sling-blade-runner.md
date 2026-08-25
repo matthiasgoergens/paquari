@@ -1,5 +1,5 @@
 +++
-title = "The heuristic that lied about the ceiling"
+title = "A 310-title optimum for Sling Blade Runner"
 date = 2026-07-20
 description = "I hand-built a solver for the Sling Blade Runner puzzle, got it stuck at 233, and concluded that multi-word overlaps barely helped. Then an off-the-shelf solver proved the real optimum was 310 — a third higher — in ten seconds. The heuristic hadn't found a hard limit; it had found a comfortable rut."
 +++

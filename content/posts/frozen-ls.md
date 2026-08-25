@@ -1,5 +1,5 @@
 +++
-title = "How a frozen `ls` turned into swap on bcachefs"
+title = "The bcachefs stall behind a frozen `ls`"
 date = 2026-07-16T23:58:00+08:00
 description = "My tiered bcachefs desktop hard-locked under load. Chasing why an `ls` could freeze for a full minute took me from a stuck user to sending patches: an SRCU starvation fix, working swap files, and a stress harness that was the only reason I trusted any of it."
 +++
