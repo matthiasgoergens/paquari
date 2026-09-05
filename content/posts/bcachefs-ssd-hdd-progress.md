@@ -5,6 +5,12 @@ draft = false
 description = "Progress on keeping SSD foreground work responsive while bcachefs uses HDDs in the background: durability, scheduling, readahead, swap, failed experiments, and what remains unsolved."
 +++
 
+[Bcachefs](https://bcachefs.org/) is a copy-on-write filesystem for Linux. One of its attractions is that a single filesystem can span a mixture of devices: fast NVMe SSDs, older SATA SSDs and large spinning hard disks, rather than requiring a matched set of drives.
+
+Its [foreground and background targets](https://bcachefs.org/Caching/) let you use that mixture as a storage hierarchy. New writes can go to the SSDs, with data moved to the HDDs in the background. The SSD copies can stay around as a cache. In principle, that gives you SSD responsiveness with HDD capacity.
+
+Alas, placing foreground data on SSDs does not yet reliably isolate it from the slow devices. Foreground writes can still be held up by filesystem-wide work that waits for the slowest member, dragging their latency down to HDD speeds—or worse when a drive stalls. The data need not be written to that HDD for it to delay the operation.
+
 I want a fairly ordinary thing from my desktop filesystem: use the SSDs for the work I am doing, and use the HDDs for capacity. Adding a background HDD should not make an SSD-resident editor, compiler or terminal command wait as though it were running from that HDD.
 
 This is a progress report. The machine is running an experimental bcachefs module and has moved hundreds of GiB to the HDDs. There are also still unexplained foreground stalls. Some fixes have good independent reproducers and clean review branches; others are prototypes; several attractive explanations have been withdrawn.
