@@ -11,11 +11,13 @@ Its [foreground and background targets](https://bcachefs.org/Caching/) let you u
 
 Alas, placing foreground data on SSDs does not yet reliably isolate it from the slow devices. Foreground writes can still be held up by filesystem-wide work that waits for the slowest member, dragging their latency down to HDD speeds—or worse when a drive stalls. The data need not be written to that HDD for it to delay the operation.
 
+Slow writes are not the only symptom I have encountered. In [the earlier investigation](@/posts/frozen-ls.md), ordinary `ls`, `stat` and `grep` commands could stop for thirty to sixty seconds or more during heavy background writes. Later, I also saw small-file reads stall and `syncfs` take far too long to return. These are not necessarily one bug: lock contention, read-ahead, writeback and durability dependencies can each turn background activity into a foreground pause. This work is about finding and removing those dependencies, not just improving a bulk-write benchmark.
+
 I want a fairly ordinary thing from my desktop filesystem: use the SSDs for the work I am doing, and use the HDDs for capacity. Adding a background HDD should not make an SSD-resident editor, compiler or terminal command wait as though it were running from that HDD.
 
 This is a progress report. The machine is running an experimental bcachefs module and has moved hundreds of GiB to the HDDs. There are also still unexplained foreground stalls. Some fixes have good independent reproducers and clean review branches; others are prototypes; several attractive explanations have been withdrawn.
 
-[My earlier post](@/posts/frozen-ls.md) covered the beginning of this work. This one covers the larger investigation that followed, including the mistakes. I have used coding agents extensively to inspect code, build candidates, run experiments and review the results. Their ability to keep working is useful. Their ability to write a confident explanation is not evidence that the explanation is right.
+This post covers the larger investigation that followed, including the mistakes. I have used coding agents extensively to inspect code, build candidates, run experiments and review the results. Their ability to keep working is useful. Their ability to write a confident explanation is not evidence that the explanation is right.
 
 For orientation, the physical machine currently runs a stock Arch kernel with only bcachefs replaced. Reconciliation—the background work that brings data into line with placement, replication and compression policy—is enabled. CopyGC is disabled. Both the per-device readahead setting and aggregate cap are 2 MiB; the mover has two I/Os and 1 MiB of outstanding-work allowance. The most recent recorded snapshot showed about 475 GiB moved since mount. The newly tested CopyGC and write-buffer series, adaptive readahead, generic block-layer changes and bcachefs swap are not deployed there.
 
