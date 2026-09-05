@@ -13,8 +13,6 @@ Alas, placing foreground data on SSDs does not yet reliably isolate it from the 
 
 Slow writes are not the only symptom I have encountered. In [the earlier investigation](@/posts/frozen-ls.md), ordinary `ls`, `stat` and `grep` commands could stop for thirty to sixty seconds or more during heavy background writes. Later, I also saw small-file reads stall and `syncfs` take far too long to return. These are not necessarily one bug: lock contention, read-ahead, writeback and durability dependencies can each turn background activity into a foreground pause. This work is about finding and removing those dependencies, not just improving a bulk-write benchmark.
 
-I want a fairly ordinary thing from my desktop filesystem: use the SSDs for the work I am doing, and use the HDDs for capacity. Adding a background HDD should not make an SSD-resident editor, compiler or terminal command wait as though it were running from that HDD.
-
 This is a progress report. The machine is running an experimental bcachefs module and has moved hundreds of GiB to the HDDs. There are also still unexplained foreground stalls. Some fixes have good independent reproducers and clean review branches; others are prototypes; several attractive explanations have been withdrawn.
 
 This post covers the larger investigation that followed, including the mistakes. I have used coding agents extensively to inspect code, build candidates, run experiments and review the results. Their ability to keep working is useful. Their ability to write a confident explanation is not evidence that the explanation is right.
