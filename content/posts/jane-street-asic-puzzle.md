@@ -195,15 +195,16 @@ every count intact while making two stars adjacent, and my netlist selects
 the same message, though not letter-perfect. My input enumeration had
 covered the degenerate cases and missed this near miss.
 
-The imperfection is the interesting part. One net in the extracted design
-has no driver. It feeds only pin `A1` of two cells in the output
-block, an `a31oi` and an `a311o` sitting next to each other near x = 178 µm,
-y = 92 µm, and no output pin of any cell reaches it. Every other net in the
-design has exactly one driver, so this is not an extraction artefact.
-[jestoph][jestoph], a solver posting under that name, found the same wire by
-visual inspection (his post describes a wire connected only to two input
-pins, with a neighbouring connection that lands on nothing) and reported it
-to Jane Street, who confirmed it as a bug.
+The imperfection was also someone else's find. [jestoph][jestoph], a
+solver posting under that name, noticed by visual inspection a wire
+connected only to two input pins, with a neighbouring connection that lands
+on nothing, and reported it to Jane Street, who confirmed it as a bug. I
+read that on the same day and went looking in my own netlist. The net is
+there: it feeds only pin `A1` of two cells in the output block, an `a31oi`
+and an `a311o` sitting next to each other near x = 178 µm, y = 92 µm, and no
+output pin of any cell reaches it. Every other net in the design has exactly
+one driver. My extractor had flagged it as undriven from the start; I had
+taken that for an extraction artefact and never looked.
 
 The net reaches only two output bits, and forcing it
 to either value leaves `success` and the other four messages unchanged. But
