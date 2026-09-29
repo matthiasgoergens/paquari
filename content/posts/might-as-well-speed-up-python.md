@@ -22,8 +22,10 @@ and I checked what went out under my name.
 ## Measuring on borrowed hardware
 
 The cloud container had four cores and was busy with its own builds most
-of the time. Two runs of the *same binary* differed by up to 15%, which
-is useless when you are hunting for 1%. So I suggested using the CI of my
+of the time. Two runs of the *same binary* differed by up to 15%. Noise
+alone just means doing more runs, but each run was also slow, and to
+find 1% under that much noise we would have needed far more runs than
+the box could manage. So I suggested using the CI of my
 public fork of CPython instead: rip out the normal workflows and replace
 them with our own measurements on throwaway branches.
 
