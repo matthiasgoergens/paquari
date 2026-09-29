@@ -37,7 +37,9 @@ design rather than on quiet machines:
   processes, in a freshly shuffled order, several rounds over. Slow drift
   on the machine hits all arms equally and cancels in the comparison.
 - One arm is always the same binary as the baseline under another name.
-  If it shows a "difference", the setup is lying.
+  Any difference it shows is chance, so it shows how big a difference
+  noise alone produces. It is also a canary: a difference bigger than
+  chance would allow means the setup is biased.
 - Builds with profile-guided optimisation (PGO: the compiler first runs a
   training workload, then optimises for what it saw) are not reproducible, and two
   builds of the same commit differ by up to about 1%. So the confidence
