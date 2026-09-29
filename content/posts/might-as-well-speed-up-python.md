@@ -77,8 +77,10 @@ is a measurement.
 
 - The per-type method cache ([PR #150160][pr150160]) was merged with a 1%
   slowdown dismissed as noise. It is real: +0.50% [+0.25, +0.75] over ten
-  pairs of builds, +6% on richards (one of the pyperformance
-  benchmarks). The cause is that type attribute lookups went from an
+  pairs of builds, +6% on [richards][richards] (one of the
+  pyperformance benchmarks: a simulation of an operating-system task
+  scheduler, originally written in BCPL, heavy on attribute lookups and
+  method calls). The cause is that type attribute lookups went from an
   inlined global cache (about 11 instructions) to an out-of-line call
   (about 45). Claude's attempt to inline the new lookup did not recover
   it.
@@ -283,6 +285,7 @@ what goes out under my name. That still took a good part of three days.
 [data]: https://github.com/matthiasgoergens/cpython/tree/clang19-dispatch-data
 [pr150160]: https://github.com/python/cpython/pull/150160
 [stabilizer]: https://github.com/matthiasgoergens/stabilizer
+[richards]: https://pyperformance.readthedocs.io/benchmarks.html#richards
 [flake-issue]: https://github.com/python/cpython/issues/158336
 [flake-pr]: https://github.com/python/cpython/pull/158337
 [gh129987]: https://github.com/python/cpython/issues/129987
