@@ -1,13 +1,14 @@
 +++
 title = "Might as well speed up Python"
 date = 2026-09-29T09:50:00+08:00
-description = "Anthropic gave me 250 dollars of cloud-session credits and I had nothing to spend them on, so I asked Claude to make CPython faster. It found that Clang 19 quietly costs the interpreter 8-11%, which I have now reported upstream. Then the story got more interesting: a flaky test, a side effect on the regex engine, and a lesson in code-layout luck."
+description = "To try out 250 dollars of free Claude Code cloud credits, I picked a project that needs only public data and asked Claude to make CPython faster. It found that Clang 19 quietly costs the interpreter 8-11%, which I have now reported upstream. Then the story got more interesting: a flaky test, a side effect on the regex engine, and a lesson in code-layout luck."
 +++
 
 Anthropic recently gave me 250 dollars of free credit for Claude Code's
-cloud sessions. I would not have paid for a project like this, but the
-credit was effectively free and I had nothing in particular in mind for
-it, so I typed this into my phone:
+cloud sessions, and I wanted to try them out. A cloud session only has
+what you give it, so I picked a project that could work entirely off
+public data, one I would otherwise have done on my desktop. I typed
+this into my phone:
 
 > I want you to take the latest cpython upstream main (or master or so)
 > and look for making it faster. [...] As a rule of thumb, if you can get
