@@ -48,8 +48,10 @@ design rather than on quiet machines:
 
 The same-binary controls came out within about ±0.15%. That says the
 runs are stable, but also what they cannot see: the same binary has the
-same code layout, so every comparison was conditional on one draw from
-the linker's layout lottery. As the regex story below shows, that draw
+same code layout. For builds without PGO, which come out identical every
+time, every comparison was conditional on one draw from the linker's
+layout lottery; PGO builds at least drew a different layout each time,
+if not on purpose. As the regex story below shows, that draw
 alone can move a benchmark by several percent.
 
 ## The find: one dispatch jump instead of 270
