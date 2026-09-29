@@ -95,7 +95,8 @@ written up already; what is often missing is a measurement.
 - `-O2` is 5.4% slower than `-O3`, and leaving out -O3's passes one at a
   time shows that almost all of that is the larger inlining limits.
 
-Claude's own optimisation ideas fared worse. A fast path in `_Py_Dealloc`
+Claude also tried optimisations of its own, and none of them made it
+through the measurements. A fast path in `_Py_Dealloc`
 executed fewer instructions and was *slower* on every build. A fast path
 for calling Python functions from C looked like a 0.37% win on six builds
 and was nothing at twenty. Six builds were not enough to tell.
