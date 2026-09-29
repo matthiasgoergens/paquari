@@ -160,9 +160,8 @@ far over the limit. LLVM exempted computed gotos from the limit in
 OpenBSD's, and Apple clang in Xcode 16.3 and 16.4 is affected in full,
 Xcode 26.0 to 26.3 in part.
 
-So the regression everyone had filed away as fixed is still shipping,
-and we found no report to any of the projects building with the
-affected compilers. Claude downloaded the published binaries and read the compiler string in each: FreeBSD's
+LLVM has fixed the bug, but Clang 19 is still in use, and we found no
+report to any of the projects that build Python with it. Claude downloaded the published binaries and read the compiler string in each: FreeBSD's
 python311 to python314 packages all say `Clang 19.1.7`, and so do
 OpenBSD's. MacPorts builds on macOS 15 with Xcode 16.4, which has the
 same problem.
