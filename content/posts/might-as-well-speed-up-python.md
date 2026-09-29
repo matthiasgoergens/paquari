@@ -54,15 +54,86 @@ layout lottery; PGO builds at least drew a different layout each time,
 if not on purpose. As the regex story below shows, that draw
 alone can move a benchmark by several percent.
 
+## An intermission: everything else we tried
+
+The dispatch find came early on the first morning, but measuring it
+properly took most of the day, and a lot else happened around it.
+
+Much of it was back and forth about method. I asked for a prior-art
+search that covered diagnoses and plain complaints as well as proposed
+solutions, and for a look at what made JavaScript engines fast. When
+Claude proposed cheap proxies such as instruction counts, I said
+micro-benchmarks only interested me as predictors of the general suite.
+The randomised blocks, the interleaving of arms within a benchmark and the many independent builds
+came out of those exchanges; so did an ablation of `-O3` against `-O2`,
+after I remembered Don Stewart using evolutionary search to tune GHC's
+flags.
+
+The cheapest wins, in effort if not in speed, came from a strategy I liked
+enough to make it a rule: look for performance *disputes* in CPython's
+history, where someone claimed a slowdown and someone else called it
+noise. Much of the thinking has already been done; what is often missing
+is a measurement.
+
+- The per-type method cache ([PR #150160][pr150160]) was merged with a 1%
+  slowdown dismissed as noise. It is real: +0.50% [+0.25, +0.75] over ten
+  pairs of builds, +6% on richards (one of the pyperformance
+  benchmarks). The cause is that type attribute lookups went from an
+  inlined global cache (about 11 instructions) to an out-of-line call
+  (about 45). Claude's attempt to inline the new lookup did not recover
+  it.
+- A claimed 0.9% slowdown from marking specialisation slow paths
+  `noinline` did not reproduce (−0.12%, not significant).
+- Doubling or quadrupling the GC's first-generation threshold makes the
+  suite 2.2% or 3.8% faster. During the debate about the incremental GC,
+  someone asked whether simply raising the existing thresholds would give
+  the same gains, and nobody had measured it. But nearly all of it is the
+  async_tree benchmarks; without them it is 0.3% or 0.6%, and we did not
+  measure the memory cost.
+- Turning off frame pointers saves about 1.2%, a bit below the 1.5-2%
+  cost given in the PEP that turned them on.
+- `-O2` is 5.4% slower than `-O3`, and leaving out -O3's passes one at a
+  time shows that almost all of that is the larger inlining limits.
+
+Claude's own optimisation ideas fared worse. A fast path in `_Py_Dealloc`
+executed fewer instructions and was *slower* on every build. A fast path
+for calling Python functions from C looked like a 0.37% win on six builds
+and was nothing at twenty. That is the usual fate of small ideas, and
+exactly why the design above matters.
+
+Along the way Claude also got [Stabilizer][stabilizer] working with
+CPython. Stabilizer is a research tool I have been resurrecting that
+re-randomises a program's code layout in every process, so that a change
+which only helps by luck of alignment shows up as noise instead of as a
+win. It found and fixed a bug in Stabilizer too: every function copy was
+placed at 16 mod 32, so the interpreter loop only ever landed on a
+handful of page offsets.
+
+It made mistakes I had to catch. At one point it disabled address-space
+layout randomisation in its instruction-count measurements to make them
+reproducible, which is exactly the opposite of what Stabilizer teaches:
+you do not remove the lottery, you average over it. It agreed, and then
+owned up to pinning the hash seed everywhere as well.
+
 ## The find: one dispatch jump instead of 270
 
-CPython's interpreter loop uses computed gotos: each bytecode handler
-ends with its own indirect jump to the next handler, so the CPU's branch
-predictor can learn patterns per opcode. Claude wrote a small script to
-count the indirect jumps in `_PyEval_EvalFrameDefault` and reported that
-GCC 13 produces 234 of them for 232 targets (a few handlers have more
-than one exit). I asked whether that was good or bad, and whether we
-should find out how to control it.
+The dispatch story started as an item on a to-do list, not as a
+discovery. CPython's interpreter loop uses computed gotos: each bytecode
+handler ends with its own indirect jump to the next one, so the CPU's
+branch predictor can learn patterns per opcode. In 2025 Nelson Elhage had
+shown that most of the reported speedup of CPython 3.14's new
+tail-calling interpreter came from a slow baseline, built with Clang 19,
+and he had filed [gh-129987][gh129987] about compilers merging those
+jumps. That issue was closed after changes that only affected GCC.
+
+Claude's survey of toolchain ideas listed it as something to check, so it
+wrote a small script to count the indirect jumps in
+`_PyEval_EvalFrameDefault` and found that GCC 13 produces 234 of them for
+232 targets (a few handlers have more than one exit): no merging, so
+apparently nothing to do. I asked whether that was good or bad, and
+whether we should find out how to control it. I remembered the
+embarrassment around the 3.14 tail-call numbers, and guessed we might be
+looking at a GCC bug. Checking other compilers answered the question.
 
 Compiling just `Python/ceval.c` at `-O3` with a range of compilers answered it:
 
@@ -83,13 +154,13 @@ far over the limit. LLVM exempted computed gotos from the limit in
 OpenBSD's, and Apple clang in Xcode 16.3 and 16.4 is affected in full,
 Xcode 26.0 to 26.3 in part.
 
-Nelson Elhage had seen this effect in 2025, when he showed that most of
-the reported speedup of CPython 3.14's tail-calling interpreter came from
-a Clang 19 baseline. His CPython issue about merged dispatch jumps ([gh-129987][gh129987]) was
-closed after changes that only affected GCC, and we found no report to
-any of the projects shipping these builds. Claude downloaded the published binaries and read the compiler
-string in each: FreeBSD's python311 to python314 packages all say
-`Clang 19.1.7`, and so do OpenBSD's. MacPorts builds on macOS 15 with Xcode 16.4, which has the same problem.
+So the effect Nelson Elhage had described was real after all, just not
+where his issue had been looking. LLVM has since fixed it, but we found
+no report to any of the projects still shipping affected builds. Claude downloaded the
+published binaries and read the compiler string in each: FreeBSD's
+python311 to python314 packages all say `Clang 19.1.7`, and so do
+OpenBSD's. MacPorts builds on macOS 15 with Xcode 16.4, which has the
+same problem.
 
 Restoring the jumps is worth a lot. On GitHub's Linux runners, with
 several independent builds per variant, on the pyperformance suite (the
@@ -116,51 +187,6 @@ the linker; it only warns that the argument is unused. Every build
 already logged its dispatch-jump count, so a patched build with one jump
 stood out. The fix passes the option to the linker plugin directly
 (`-Wl,-plugin-opt=` for GNU ld and lld, `-Wl,-mllvm,` for Apple's ld64).
-
-## Measuring other people's arguments
-
-The cheapest wins, in effort if not in speed, came from a strategy I liked
-enough to make it a rule: look for performance *disputes* in CPython's
-history, where someone claimed a slowdown and someone else called it
-noise. Much of the thinking has already been done; what is often missing is a
-measurement.
-
-- The per-type method cache ([PR #150160][pr150160]) was merged with a 1%
-  slowdown dismissed as noise. It is real: +0.50% [+0.25, +0.75] over ten
-  pairs of builds, +6% on richards. The cause is that type attribute
-  lookups went from an inlined global cache (about 11 instructions) to an
-  out-of-line call (about 45).
-- A claimed 0.9% slowdown from marking specialisation slow paths
-  `noinline` did not reproduce (−0.12%, not significant).
-- Doubling or quadrupling the GC's first-generation threshold makes the
-  suite 2.2% or 3.8% faster. During the debate about the incremental GC,
-  someone asked whether simply raising the existing thresholds would give
-  the same gains, and nobody had measured it. But nearly all of it is the async_tree
-  benchmarks; without them it is 0.3% or 0.6%, and we did not measure the
-  memory cost.
-- `-O2` is 5.4% slower than `-O3`, and leaving out -O3's passes one at a
-  time shows that almost all of that is the larger inlining limits.
-
-Claude's own optimisation ideas fared worse. A fast path in `_Py_Dealloc`
-executed fewer instructions and was *slower* on every build. A fast path
-for calling Python functions from C looked like a 0.37% win on six builds
-and was nothing at twenty. That is the usual fate of small ideas, and
-exactly why the design above matters.
-
-Along the way Claude also got [Stabilizer][stabilizer] working with
-CPython. Stabilizer is a research tool I have been resurrecting that
-re-randomises a program's code layout in every process, so that a change
-which only helps by luck of alignment shows up as noise instead of as a
-win. It found and fixed a bug in Stabilizer too: every function copy was
-placed at 16 mod 32, so the interpreter loop only ever landed on a
-handful of page offsets.
-
-It made mistakes I had to catch. At one point it disabled address-space
-layout randomisation in its instruction-count measurements to make them
-reproducible, which
-is exactly the opposite of what Stabilizer teaches: you do not remove the
-lottery, you average over it. It agreed, and then owned up to pinning the
-hash seed everywhere as well.
 
 ## Why I moved to my desktop
 
