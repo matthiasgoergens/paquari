@@ -129,17 +129,27 @@ branch predictor can learn patterns per opcode. Compilers like to merge
 identical code, and in 2025 Nelson Elhage filed [gh-129987][gh129987]
 because they were merging those copies. That issue was closed after
 changes that only affected GCC. The agent's list also mentioned LLVM 19's
-version of the problem, which is what had inflated the speedup first
-reported for Python 3.14's tail-calling interpreter, but said it had
-been fixed in LLVM 20.
+version of the problem, but said it had been fixed in LLVM 20.
+
+I knew that story. My friend Ken Jin had merged a new tail-calling
+interpreter into CPython in early 2025, and the What's New page for 3.14
+reported it as 9-15% faster. It is usually right to suspect your own code
+before the compiler. This time it was the compiler: Clang 19 had merged the dispatch jumps of the old interpreter,
+which was the baseline, and Nelson Elhage [tracked it down][nelhage].
+Ken's first ever blog post was titled ["I'm Sorry for Python's
+tail-calling Interpreter's Results"][kenjin], and gave the real gain as
+3-5%, still a nice speedup for an interpreter. Two days after that post,
+the LLVM fix ([llvm/llvm-project#114990][llvm114990]) was merged, and it
+shipped in LLVM 20.1.1 the same month. So in the end the old interpreter got
+faster too, for everyone building it with a current Clang, and possibly
+other interpreters that use computed gotos.
 
 So Claude wrote a small script to count the indirect jumps in
 `_PyEval_EvalFrameDefault`, and found that GCC 13 produces 234 of them
 for 232 targets (a few handlers have more than one exit): no merging, so
 apparently nothing to do. I asked whether that was good or bad, and
-whether we should find out how to control it. I remembered that the
-first 3.14 tail-call numbers had been inflated by a compiler problem, and
-guessed GCC might have one of its own. Then Claude compiled just
+whether we should find out how to control it. With Ken's story in mind,
+I guessed GCC might have a problem of its own. Then Claude compiled just
 `Python/ceval.c` at `-O3` with a range of compilers:
 
 | compiler | dispatch jumps |
@@ -213,8 +223,8 @@ The first thing the local session looked at was a red CI job on the PR:
 `test_threading`'s `test_set_and_clear` had timed out under the thread
 sanitiser. That job was built with Clang 21, where the PR changes
 nothing, so it was a flake. Before fixing anything I wanted a
-reproducer, so Claude built the same configuration and ran the test on two cores shared with
-four busy loops. It failed 9 times in 40.
+reproducer, so Claude built the same configuration and ran the test on
+two cores shared with four busy loops. It failed 9 times in 40.
 
 The test starts five threads that call `event.wait()`, sleeps 50 ms in
 the hope that they have all started waiting, and then calls
@@ -286,3 +296,6 @@ most of three days.
 [flake-issue]: https://github.com/python/cpython/issues/158336
 [flake-pr]: https://github.com/python/cpython/pull/158337
 [gh129987]: https://github.com/python/cpython/issues/129987
+[nelhage]: https://blog.nelhage.com/post/cpython-tail-call/
+[kenjin]: https://fidget-spinner.github.io/posts/apology-tail-call.html
+[llvm114990]: https://github.com/llvm/llvm-project/pull/114990
