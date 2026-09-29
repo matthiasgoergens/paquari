@@ -46,7 +46,11 @@ design rather than on quiet machines:
   intervals come from many independent builds, not from running one
   build many times.
 
-The same-binary controls came out within about ±0.15%, so the design worked.
+The same-binary controls came out within about ±0.15%. That says the
+runs are stable, but also what they cannot see: the same binary has the
+same code layout, so every comparison was conditional on one draw from
+the linker's layout lottery. As the regex story below shows, that draw
+alone can move a benchmark by several percent.
 
 ## The find: one dispatch jump instead of 270
 
