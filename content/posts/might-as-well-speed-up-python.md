@@ -1,7 +1,7 @@
 +++
 title = "Might as well speed up Python"
 date = 2026-09-29T09:50:00+08:00
-description = "To try out 250 dollars of free Claude Code cloud credits, I picked a project that needs only public data and asked Claude to make CPython faster. It found that Clang 19 quietly costs the interpreter 8-11%, which I have now reported upstream. Then the story got more interesting: a flaky test, a side effect on the regex engine, and a lesson in code-layout luck."
+description = "To try out 250 dollars of free Claude Code cloud credits, I picked a project that needs only public data and asked Claude to make CPython faster. It found that Clang 19 slows the interpreter down by 8-11%, which I have reported upstream. Along the way it also turned up a flaky test and a side effect on the regex engine whose size depended heavily on code layout."
 +++
 
 Anthropic recently gave me 250 dollars of free credit for Claude Code's
@@ -15,7 +15,6 @@ this into my phone:
 > a 1% speedup across a general benchmark of cpython performance, that's
 > already a win.
 
-What follows is what came of that, including the parts that went wrong.
 Most of the work was done by Claude; I steered, mostly from my phone,
 and I checked what went out under my name.
 
@@ -29,8 +28,8 @@ the box could manage. So I suggested using the CI of my
 public fork of CPython instead: rip out the normal workflows and replace
 them with our own measurements on throwaway branches.
 
-GitHub's runners are noisy too, so everything rested on experimental
-design rather than on quiet machines:
+GitHub's runners are noisy too, so the comparisons had to be designed
+to cope with noise:
 
 - Every job builds all variants ("arms") of an experiment on the same
   runner, then runs each benchmark with all arms back to back as fresh
@@ -46,13 +45,13 @@ design rather than on quiet machines:
   intervals come from many independent builds, not from running one
   build many times.
 
-The same-binary controls came out within about ±0.15%. That says the
-runs are stable, but also what they cannot see: the same binary has the
-same code layout. For builds without PGO, which come out identical every
-time, every comparison was conditional on one draw from the linker's
-layout lottery; PGO builds at least drew a different layout each time,
-if not on purpose. As the regex story below shows, that draw
-alone can move a benchmark by several percent.
+The same-binary controls came out within about ±0.15%. They cannot show
+layout effects, though, because the same binary has the same code
+layout. Builds without PGO come out identical every time, so every
+comparison between them rested on one draw from the linker's layout
+lottery. PGO builds got a different layout each time, though not by
+design. As the regex section below shows, layout alone can move a
+benchmark by several percent.
 
 ## An intermission: everything else we tried
 
@@ -69,11 +68,10 @@ came out of those exchanges; so did an ablation of `-O3` against `-O2`,
 after I remembered Don Stewart using evolutionary search to tune GHC's
 flags.
 
-The cheapest wins, in effort if not in speed, came from a strategy I liked
-enough to make it a rule: look for performance *disputes* in CPython's
-history, where someone claimed a slowdown and someone else called it
-noise. Much of the thinking has already been done; what is often missing
-is a measurement.
+One strategy worked well enough that I made it a rule: look for
+performance *disputes* in CPython's history, where someone claimed a
+slowdown and someone else called it noise. The arguments are usually
+written up already; what is often missing is a measurement.
 
 - The per-type method cache ([PR #150160][pr150160]) was merged with a 1%
   slowdown dismissed as noise. It is real: +0.50% [+0.25, +0.75] over ten
@@ -100,22 +98,22 @@ is a measurement.
 Claude's own optimisation ideas fared worse. A fast path in `_Py_Dealloc`
 executed fewer instructions and was *slower* on every build. A fast path
 for calling Python functions from C looked like a 0.37% win on six builds
-and was nothing at twenty. That is the usual fate of small ideas, and
-exactly why the design above matters.
+and was nothing at twenty. Six builds were not enough to tell.
 
 Along the way Claude also got [Stabilizer][stabilizer] working with
 CPython. Stabilizer is a research tool I have been resurrecting that
 re-randomises a program's code layout in every process, so that a change
 which only helps by luck of alignment shows up as noise instead of as a
-win. It found and fixed a bug in Stabilizer too: every function copy was
-placed at 16 mod 32, so the interpreter loop only ever landed on a
+win. It also found and fixed a bug in Stabilizer: every function copy
+was placed at 16 mod 32, so the interpreter loop landed on only a
 handful of page offsets.
 
 It made mistakes I had to catch. At one point it disabled address-space
 layout randomisation in its instruction-count measurements to make them
-reproducible, which is exactly the opposite of what Stabilizer teaches:
-you do not remove the lottery, you average over it. It agreed, and then
-owned up to pinning the hash seed everywhere as well.
+reproducible. That is the opposite of what Stabilizer is for: it
+randomises the layout on purpose, so that results average over layouts
+instead of depending on one. When I pointed that out it agreed, and said
+it had also pinned the hash seed everywhere.
 
 ## The find: one dispatch jump instead of 270
 
@@ -131,17 +129,17 @@ identical code, and in 2025 Nelson Elhage filed [gh-129987][gh129987]
 because they were merging those copies. That issue was closed after
 changes that only affected GCC. The agent's list also mentioned LLVM 19's
 version of the problem, which is what had inflated the speedup first
-reported for Python 3.14's tail-calling interpreter, but as history:
-fixed in LLVM 20.
+reported for Python 3.14's tail-calling interpreter, but said it had
+been fixed in LLVM 20.
 
 So Claude wrote a small script to count the indirect jumps in
 `_PyEval_EvalFrameDefault`, and found that GCC 13 produces 234 of them
 for 232 targets (a few handlers have more than one exit): no merging, so
 apparently nothing to do. I asked whether that was good or bad, and
-whether we should find out how to control it. I remembered the
-embarrassment around the 3.14 tail-call numbers, and guessed we might be
-looking at a GCC bug. Compiling just `Python/ceval.c` at `-O3` with a
-range of compilers settled it:
+whether we should find out how to control it. I remembered that the
+first 3.14 tail-call numbers had been inflated by a compiler problem, and
+guessed GCC might have one of its own. Then Claude compiled just
+`Python/ceval.c` at `-O3` with a range of compilers:
 
 | compiler | dispatch jumps |
 |---|---|
@@ -200,7 +198,7 @@ attach python/cpython itself, because my fork is also called `cpython`
 and the environment checks repositories out by name, so it filed them
 from separate sessions it spawned for the purpose.
 
-But the cloud box did not have my setup. It did not know my preferences:
+But the cloud box did not have my setup. It did not have my preferences:
 it put an AI-generated footer on the issue and PR and co-author trailers
 on every commit, which I had to have removed. It could not use my tools,
 like the checker I run over prose for the tics language models fall into.
@@ -213,8 +211,8 @@ and my laptops within reach.
 The first thing the local session looked at was a red CI job on the PR:
 `test_threading`'s `test_set_and_clear` had timed out under the thread
 sanitiser. That job was built with Clang 21, where the PR changes
-nothing, so it was a flake. But flakes deserve reproducers, so Claude
-built the same configuration and ran the test on two cores shared with
+nothing, so it was a flake. Before fixing anything I wanted a
+reproducer, so Claude built the same configuration and ran the test on two cores shared with
 four busy loops. It failed 9 times in 40.
 
 The test starts five threads that call `event.wait()`, sleeps 50 ms in
@@ -228,8 +226,8 @@ in 40 under the same load: [gh-158336][flake-issue] and
 ## The regex engine
 
 I then had a subagent audit the issue and PR for claims without data
-behind them. The most interesting find: under LTO the flag applies to the
-whole program, not just the interpreter loop, and the regex engine
+behind them. It found something I had missed: under LTO the flag applies
+to the whole program, not only to the interpreter loop, and the regex engine
 (`Modules/_sre/sre_lib.h`) also uses computed gotos. Its three matching
 functions go from 7, 14 and 18 indirect jumps to 33 each. The one
 benchmark that consistently got slower in the original runs was
@@ -238,8 +236,8 @@ regex_effbot, by 6-9%.
 Split by the runners' CPU models, which the harness now records, the
 slowdown was worst on AMD's Zen 3 (EPYC 7763). On my i9, my M4 Max and
 my M3 MacBook Air, the PR made all three regex benchmarks *faster*. My
-first instinct was that different CPUs want different code, which is
-unworkable: nobody can test every CPU a Python binary will ever run on.
+first idea was to use different code for different CPUs, which is
+unworkable: nobody can test every CPU a Python binary will run on.
 
 Claude also found a way to keep the regex engine merged without touching
 the interpreter: make the shared dispatch block the target of an empty
@@ -255,28 +253,27 @@ function order (`-Wl,--shuffle-sections`). On the EPYC 7763 runners
 regex_effbot came out between 1% and 9% slower with the PR, depending on
 the layout; two of main's own layouts differed by 4.7%. The three regex
 benchmarks together showed no significant change. Under Stabilizer the
-merged version was slower on Zen 3 as well. So much of the scary number
-was the layout lottery, and the PR stays as it is. [The details are in the
+merged version was slower on Zen 3 as well. So the size of the
+regex_effbot slowdown depended heavily on layout, and I left the PR as it
+is. [The details are in the
 PR description][pr], and the data is on a [branch of my
 fork][data].
 
 ## What I took away
 
-The main find came from a question, not from a clever idea: is 234
-jumps good or bad? Counting things, and then comparing across compilers,
-did better here than any of the hand-written optimisations the model
-came up with.
+The dispatch find came from asking whether 234 jumps was good or bad, and
+then counting the same thing with other compilers. None of the
+hand-written optimisations the model tried produced a measurable win.
 
-Code layout matters more than I expected, and it cuts both ways. A
-"significant" 7-9% regression in a well-designed experiment was mostly
-the luck of one link order. Measuring layout-randomised builds, with
-Stabilizer or at least a few shuffled link orders, is now part of how I
-want to measure anything this small.
+Code layout moved the results more than I expected: the regex_effbot
+slowdown ranged from 1% to 9% across three link orders. For changes this
+small I now want layout-randomised builds, with Stabilizer or at least a
+few shuffled link orders.
 
-And the work split well. Claude did the builds, the scripts, the
-statistics and a lot of reading, much faster than I could have. My part
-was asking the questions, catching the methodological slips, and deciding
-what goes out under my name. That still took a good part of three days.
+Claude did the builds, the scripts, the statistics and a lot of reading,
+much faster than I could have. I asked the questions, caught the
+methodological slips, and decided what went out under my name. It took
+most of three days.
 
 [llvm78582]: https://github.com/llvm/llvm-project/pull/78582
 [issue]: https://github.com/python/cpython/issues/158283
