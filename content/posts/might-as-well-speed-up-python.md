@@ -117,25 +117,29 @@ owned up to pinning the hash seed everywhere as well.
 
 ## The find: one dispatch jump instead of 270
 
-The dispatch story started as an item on a to-do list, not as a
-discovery. CPython's interpreter loop uses computed gotos: each bytecode
-handler ends with its own indirect jump to the next one, so the CPU's
-branch predictor can learn patterns per opcode. In 2025 Nelson Elhage had
-shown that most of the reported speedup of CPython 3.14's new
-tail-calling interpreter came from a slow baseline, built with Clang 19,
-and he had filed [gh-129987][gh129987] about compilers merging those
-jumps. That issue was closed after changes that only affected GCC.
+The dispatch story started as an item on a to-do list. Early on I had
+asked Claude to look at compiler flags, even at changes to LLVM, and at
+what made JavaScript engines fast. The research agent it sent out came
+back with ten experiments, and the third was a dispatch-site audit.
 
-Claude's survey of toolchain ideas listed it as something to check, so it
-wrote a small script to count the indirect jumps in
-`_PyEval_EvalFrameDefault` and found that GCC 13 produces 234 of them for
-232 targets (a few handlers have more than one exit): no merging, so
+CPython's interpreter loop uses computed gotos: each bytecode handler
+ends with its own copy of the indirect jump to the next one, so the CPU's
+branch predictor can learn patterns per opcode. Compilers like to merge
+identical code, and in 2025 Nelson Elhage filed [gh-129987][gh129987]
+because they were merging those copies. That issue was closed after
+changes that only affected GCC. The agent's list also mentioned LLVM 19's
+version of the problem, which is what had inflated the speedup first
+reported for Python 3.14's tail-calling interpreter, but as history:
+fixed in LLVM 20.
+
+So Claude wrote a small script to count the indirect jumps in
+`_PyEval_EvalFrameDefault`, and found that GCC 13 produces 234 of them
+for 232 targets (a few handlers have more than one exit): no merging, so
 apparently nothing to do. I asked whether that was good or bad, and
 whether we should find out how to control it. I remembered the
 embarrassment around the 3.14 tail-call numbers, and guessed we might be
-looking at a GCC bug. Checking other compilers answered the question.
-
-Compiling just `Python/ceval.c` at `-O3` with a range of compilers answered it:
+looking at a GCC bug. Compiling just `Python/ceval.c` at `-O3` with a
+range of compilers settled it:
 
 | compiler | dispatch jumps |
 |---|---|
@@ -154,10 +158,9 @@ far over the limit. LLVM exempted computed gotos from the limit in
 OpenBSD's, and Apple clang in Xcode 16.3 and 16.4 is affected in full,
 Xcode 26.0 to 26.3 in part.
 
-So the effect Nelson Elhage had described was real after all, just not
-where his issue had been looking. LLVM has since fixed it, but we found
-no report to any of the projects still shipping affected builds. Claude downloaded the
-published binaries and read the compiler string in each: FreeBSD's
+So the regression everyone had filed away as fixed is still shipping,
+and we found no report to any of the projects building with the
+affected compilers. Claude downloaded the published binaries and read the compiler string in each: FreeBSD's
 python311 to python314 packages all say `Clang 19.1.7`, and so do
 OpenBSD's. MacPorts builds on macOS 15 with Xcode 16.4, which has the
 same problem.
